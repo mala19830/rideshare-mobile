@@ -5,7 +5,9 @@ export default function UdhetimiNukUGjet() {
     <main>
       <h1>Udhëtimi nuk u gjet</h1>
       <p>Kjo adresë nuk përputhet me një udhëtim në listë.</p>
-      <Link className="action" href="/">Kthehu te lista</Link>
+      <Link className="action" href="/">
+        Kthehu te lista
+      </Link>
     </main>
   );
 }
