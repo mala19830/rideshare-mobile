@@ -2,7 +2,7 @@
 
 ## Rasti im
 GitHub: mala19830
-Kodi: P7-704
+Kodi: P7-092
 Skenari i zgjedhur (numri dhe titulli, nga Rastet 1–5): Rasti 1 · Lista dhe detajet
 ID i udhëtimit në projektin tim: 2
 Të dhënat fiktive të rastit: Ferizaj → AAB, 10:05, 2 vende. Ora për provën e re: 10:10.
