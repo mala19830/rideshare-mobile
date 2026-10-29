@@ -54,4 +54,3 @@ self.addEventListener("fetch", event => {
   }
   // /panel, /api/auth, POST dhe faqet private nuk ruhen dhe nuk ridërgohen.
 });
-

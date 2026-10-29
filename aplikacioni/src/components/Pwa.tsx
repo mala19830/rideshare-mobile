@@ -18,9 +18,11 @@ export default function Pwa() {
       navigator.serviceWorker.removeEventListener("controllerchange", warmSnapshot);
     };
   }, []);
-  return <aside style={{ padding: "1rem" }}>
-    <a href="/offline.html">Lista për lexim pa internet</a>
-    <p>Kopja e ruajtur mund të jetë e vjetër. Këtu nuk konfirmohen rezervime.</p>
+  // Stilet te globals.css (.pwa-note), si pjesa tjetër e aplikacionit.
+  return <aside className="pwa-note">
+    <div>
+      <a href="/offline.html">Lista për lexim pa internet →</a>
+      <p>Kopja e ruajtur mund të jetë e vjetër. Këtu nuk konfirmohen rezervime.</p>
+    </div>
   </aside>;
 }
-

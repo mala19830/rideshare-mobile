@@ -1,122 +1,377 @@
 :root {
-  --background: #0b1220;
-  --surface: #111a2b;
-  --text: #edf2fc;
-  --muted: #c3ccdc;
-  --border: #8090aa;
-  --primary: #3548d4;
-  --primary-hover: #4257eb;
-  --focus: #89ddff;
-  --disabled: #39455b;
+  --background: #fafafa;
+  --surface: #ffffff;
+  --foreground: #0f0f10;
+  --muted: #6b6b76;
+  --border: #e6e6e9;
+  --accent: #0f0f10;
+  --accent-foreground: #ffffff;
+  --positive: #0b6b45;
+  --positive-background: #e6f4ec;
+  --danger: #b42318;
+  color-scheme: light;
+}
+
+/* Tema e errët: e vendos skripti te layout.tsx ose butoni NderruesiTemes. */
+:root[data-theme="dark"] {
+  --background: #0a0a0b;
+  --surface: #131315;
+  --foreground: #f2f2f3;
+  --muted: #9a9aa3;
+  --border: #26262a;
+  --accent: #f2f2f3;
+  --accent-foreground: #0a0a0b;
+  --positive: #6ad5a2;
+  --positive-background: #11261c;
+  --danger: #ff8a7a;
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
+  padding: 0;
+  margin: 0;
 }
 
 html {
-  background: var(--background);
+  height: 100%;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-  overflow-x: hidden;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--foreground);
   background: var(--background);
-  color: var(--text);
-  font-family: system-ui, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
-  color: var(--focus);
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 12px 20px 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Lidhja e llogarisë: "Hyr / Paneli im" ose emri dhe roli. */
+.account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.account-link svg {
+  flex-shrink: 0;
+}
+
+.account-name {
+  overflow: hidden;
+  max-width: 14ch;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.account-role {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.theme-toggle,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--foreground);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* Në ekrane të ngushta mbetet ikona dhe roli; emri shfaqet te paneli. */
+@media (max-width: 420px) {
+  .account-name {
+    display: none;
+  }
+}
+
+.brand {
+  flex-shrink: 0;
+}
+
+.icon-button:hover,
+.theme-toggle:hover,
+.account-link:hover {
+  border-color: var(--muted);
+}
+
+.theme-toggle .sun,
+[data-theme="dark"] .theme-toggle .moon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle .sun {
+  display: block;
+}
+
+/* Lidhja për lexuesin offline (Pwa.tsx), në të njëjtën kolonë me faqen. */
+.pwa-note {
+  width: 100%;
+  max-width: 560px;
+  margin: 12px auto 0;
+  padding: 0 20px;
+}
+
+.pwa-note > div {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.pwa-note a {
+  justify-self: start;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.pwa-note a:hover {
+  text-decoration: underline;
 }
 
 main {
   width: 100%;
-  max-width: 720px;
-  margin: auto;
-  padding: 24px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px 20px 48px;
 }
 
-h1,
-h2,
-p {
-  overflow-wrap: anywhere;
+main > * + * {
+  margin-top: 12px;
 }
 
 h1 {
-  margin-top: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
+h1 + .lead {
+  margin-top: 6px;
+}
+
+.lead {
+  color: var(--muted);
+}
+
+/* Lista e udhëtimeve */
 .trip-list {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   margin-top: 24px;
 }
 
 .trip-card {
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px 20px;
   background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 
 .trip-card h2 {
-  margin: 0 0 8px;
-  font-size: 1.25rem;
-  line-height: 1.3;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.trip-card p {
-  margin: 0;
+.trip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ora e ndryshuar: e vjetra e vijëzuar → e reja. */
+.time-change {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.time-change s {
   color: var(--muted);
 }
 
+.time-change strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--positive);
+  background: var(--positive-background);
+}
+
+.badge.full {
+  color: var(--muted);
+  background: var(--border);
+}
+
+/* Veprimet: lidhje dhe butona me lartësi të mjaftueshme për prekje */
 .action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  margin-top: 12px;
-  padding: 8px 14px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--primary);
-  color: white;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 12px;
   font: inherit;
-  text-decoration: none;
+  font-weight: 500;
+  color: var(--accent-foreground);
+  background: var(--accent);
   cursor: pointer;
-  transition: background-color 180ms ease-out;
 }
 
-.action:hover {
-  background: var(--primary-hover);
-}
-
-.action:focus-visible,
-a:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
+.action.secondary {
+  color: var(--foreground);
+  background: transparent;
+  border-color: var(--border);
 }
 
 .action:disabled {
-  background: var(--disabled);
-  color: #e4eaf4;
+  color: var(--muted);
+  background: var(--border);
   cursor: default;
 }
 
-@media (max-width: 480px) {
-  main {
-    padding: 20px 16px;
-  }
+.action.danger {
+  color: var(--danger);
+  background: transparent;
+  border-color: var(--border);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .action {
-    transition: none;
-  }
+main > .action {
+  width: 100%;
+  margin-top: 24px;
+}
+
+main > .action + .action {
+  margin-top: 12px;
+}
+
+/* Detajet dhe kërkesa */
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.details {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+}
+
+.details > div + div {
+  border-top: 1px solid var(--border);
+}
+
+.details dt {
+  color: var(--muted);
+}
+
+.details dd {
+  font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin-top: 24px;
+  padding: 14px 20px;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.note + .action {
+  margin-top: 12px;
 }

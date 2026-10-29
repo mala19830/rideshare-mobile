@@ -1,74 +1,51 @@
 # RideShare — Java 6 · PWA dhe puna offline
 
-**Statusi (29.10.2026):** Kodi për Javën 6 është në GitHub dhe në deployment-in e prodhimit Vercel (commit `ab3af5b95346785ab5d3b4385b49d66fd4f572be`). Databaza Neon u kontrollua drejtpërdrejt; tri provat në shfletues dhe testi me internet të ndërprerë **nuk janë kryer ende**. Nuk po shënohen si të kaluara pa u parë rezultati real.
-
 ## Çfarë ndërtova
+RideShare tani lexon listën publike të udhëtimeve edhe pa internet, por nuk konfirmon asgjë pa serverin. Puna ka tri pjesë:
+- **Manifesti** (`src/app/manifest.ts`, i shërbyer si `/manifest.webmanifest`): identiteti i aplikacionit, pra emri “RideShare AAB”, ikonat 192×192 e 512×512, hapja `standalone` dhe ngjyrat. Manifesti nuk ruan udhëtime; instalimi në telefon vetëm nuk provon leximin offline.
+- **Service worker** (`public/sw.js`): skript që punon në shfletues dhe trajton vetëm disa kërkesa. Për `GET /api/udhetimet` provon së pari rrjetin (network-first). Kur përgjigjja është e mirë, e ruan me kohën e ruajtjes; kur serveri nuk arrihet, lexon kopjen e fundit. Kur faqja `/` nuk hapet pa rrjet, kthen lexuesin `offline.html`. Paneli, hyrja (`/api/auth`) dhe çdo `POST` nuk ruhen dhe nuk ridërgohen.
+- **Kopja publike në pajisje**: në Cache Storage, te `rideshare-public-v1`, ruhen vetëm `offline.html`, dy ikonat dhe lista publike. Kjo kopje është në këtë shfletues, mund të fshihet dhe nuk është backup i databazës. Neon mbetet burimi i të dhënave.
 
-- `aplikacioni/src/app/manifest.ts`: manifesti PWA, emri RideShare AAB, `standalone`, ikonat 192×192 dhe 512×512.
-- `aplikacioni/src/app/api/udhetimet/route.ts`: API publike `GET /api/udhetimet` me vetëm fushat `id`, `nisja`, `destinacioni`, `ora`, `vendtakimi` dhe `vende`.
-- `aplikacioni/public/sw.js`: service worker që ruan dokumentin offline, ikonat dhe listën publike; provon serverin përpara kopjes lokale.
-- `aplikacioni/public/offline.html`: lexues i thjeshtë me karta, kohën e kopjes dhe burimin e listës. Veprimi për kërkesë vendi është i çaktivizuar.
-- `aplikacioni/src/components/Pwa.tsx`: regjistron service worker-in dhe përpiqet të mbushë kopjen e listës kur worker-i kontrollon faqen.
-- `aplikacioni/src/app/layout.tsx`: e vendos komponentin PWA në aplikacion.
+Endpoint-i `GET /api/udhetimet` rishfrytëzon `lexoUdhetimet()` të Javës 4 dhe kthen vetëm fushat publike. Pa email, profil ose sesion. Komponenti `Pwa.tsx` në layout regjistron worker-in dhe e kërkon listën një herë, që kopja të mbushet qysh në vizitën e parë.
 
-Offline lexohet **vetëm lista publike**. Nuk krijohet rezervim dhe nuk ruhen sesione, profile ose të dhëna private në këtë cache.
+Kodin e udhëzimit e përshtata me dizajnin e aplikacionit tim. Lexuesi offline përdor të njëjtat ngjyra, butonat dhe temën e çelët/errët si lista kryesore. Kartat janë të njëjta me ato të listës: titulli, pastaj Ora · Shoferi · vendet, pastaj “Shiko detajet” brenda kartës. Rrjedha mbetet karta → detajet → kërkesa për vend ose anulimi. Kur lista vjen nga kopja, “Shiko detajet” është i çaktivizuar, sepse detajet dhe kërkesa nuk hapen pa server; me server është lidhje normale te `/udhetimi/<id>`. “Rifresko listën” qëndron te kutia e mesazhit për burimin dhe kohën e kopjes. Që kartat të tregojnë shoferin dhe orën e ndryshuar (~~08:15~~ → 09:15), endpoint-i kthen edhe `shoferi` dhe `ora_e_meparshme`, që shfaqen gjithsesi te lista publike. Ikonat dhe ngjyrat e manifestit janë në stilin e aplikacionit.
 
 ## Provat që bëra
-
 ### Prova 1: Manifesti dhe vizita online
-
-**Hapat:** Hap `/manifest.webmanifest`, `/icons/icon-192.png`, `/icons/icon-512.png`. Hap faqen kryesore dhe kontrollo Application → Service Workers dhe Cache Storage → `rideshare-public-v1`.
-
-**Pritshmëria:** Emri RideShare AAB, ikonat 192×192 / 512×512, service worker aktiv dhe tri udhëtimet të ruajtura në kopjen publike.
-
-**Rezultati i verifikuar:** Më 29.10.2026, nga deployment-i i prodhimit u kërkuan drejtpërdrejt `/manifest.webmanifest`, të dy ikonat, `/sw.js`, `/offline.html` dhe `/api/udhetimet`: secila adresë ktheu HTTP 200 me llojin e duhur të përmbajtjes. Manifesti ka emrin dhe përmasat e sakta. API ktheu JSON me tri udhëtimet (ID 1 = 08:00, ID 2 = 08:15, ID 3 = 07:45), që përputhen me SELECT nga Neon. Skedarët dhe konfigurimi janë të pranishëm në GitHub dhe deploy i Vercel është READY.
-
-**Nuk është verifikuar ende** në shfletues aktivizimi i worker-it, prania e `/api/udhetimet` në Cache Storage, koha e kopjes dhe instalimi.
+Në Chrome, me profil të ri pa kopje, hapa `http://localhost:3000/manifest.webmanifest`. Emri ishte “RideShare AAB”, `short_name` “RideShare”, me dy ikona: `/icons/icon-192.png` (192×192) dhe `/icons/icon-512.png` (512×512). Të dyja adresat u hapën si PNG me këto përmasa. Pastaj hapa `/` me internet. Service worker `/sw.js` ishte `activated` dhe e kontrollonte faqen. Te Cache Storage → `rideshare-public-v1` ishin `/offline.html`, dy ikonat dhe `/api/udhetimet`, pra lista u ruajt. `/offline.html` me internet tregoi tri kartat, “Lista erdhi nga serveri. Lexo sërish para çdo veprimi.” dhe kohën e ruajtjes 22/10/2026, 18:53:33. Butonat “Shiko detajet” ishin lidhje te `/udhetimi/1`, `/udhetimi/2` dhe `/udhetimi/3`. Instalimin në telefon nuk e provova; prova u bë në shfletuesin e kompjuterit.
 
 ### Prova 2: Pa internet dhe pas rifreskimit
-
-**Hapat:** Me internet, hap faqen dhe sigurohu që ruhet lista. Në skedën RideShare aktivizo DevTools → Network → Offline. Rifresko `/`; kontrollo tri kartat, mesazhin e kopjes dhe kohën.
-
-**Pritshmëria:** Shfaqet kopja e fundit me paralajmërim se mund të jetë e vjetruar; kërkesa për vend mbetet e çaktivizuar.
-
-**Rezultati:** Në pritje të provës reale në shfletues. Prania e kodit `sw.js` nuk është provë se rifreskimi offline kalon.
+Ndërprerjen e simulova me Network → Offline vetëm për tab-in RideShare, përfshirë service worker-in. Hapa `/` dhe e rifreskova faqen. U hap lexuesi offline (“RideShare · Lista e ruajtur”) me tri kartat: Prishtinë 08:00 (2 vende), Fushë Kosovë ~~08:15~~ → 09:15 (1 vend) dhe Lipjan 07:45 (pa vende), secila me shoferin. Mesazhi ishte “Lista e fundit e ruajtur · Mund të jetë vjetruar. Serveri nuk u arrit.”, me kohën 22/10/2026, 18:53:33. Në secilën kartë “Shiko detajet” ishte i çaktivizuar, prandaj nuk mund të arrihej as kërkesa “Kërko vend”, që te aplikacioni im ndodhet te detajet. Nuk kishte konfirmim rezervimi, sepse kopja vetëm kujton listën e fundit. Pa server nuk dihet nëse vendi ende ekziston, dhe kërkesa ka nevojë për sesionin dhe kontrollin në server të Javës 5.
 
 ### Prova 3: Lidhja rikthehet
-
-**Hapat:** Pasi është ruajtur ora 08:15 e ID 2, mbaje skedën RideShare offline. Në Neon ndrysho përkohësisht ID 2 në 08:25, pastaj kthehu online dhe shtyp `Rifresko listën`. Në fund rikthe 08:15.
-
-```sql
-UPDATE udhetimet SET ora = '08:25' WHERE id = '2';
--- Pas verifikimit:
-UPDATE udhetimet SET ora = '08:15' WHERE id = '2';
-```
-
-**Pritshmëria:** Offline shihet 08:15, kurse pas rifreskimit online 08:25 dhe koha e re e ruajtjes.
-
-**Rezultati:** Nuk është kryer ky ndryshim i përkohshëm; Neon u kontrollua vetëm me SELECT. Ora e ID 2 është ende 08:15.
+RideShare mbeti offline. Në Neon, ID 2 kishte `ora` = 09:15 (kjo është ora fillestare në databazën time, me `ora_e_meparshme` = 08:15). Ekzekutova `UPDATE udhetimet SET ora = '08:25' WHERE id = '2';` dhe Neon tregoi 08:25. Offline, edhe pas “Rifresko listën”, aplikacioni shfaqte ende 09:15 nga kopja e 18:53:33 dhe mesazhin “Serveri nuk u arrit”. E ktheva rrjetin në Online dhe klikova “Rifresko listën”. ID 2 tregoi ~~08:15~~ → 08:25, burimin “Lista erdhi nga serveri” dhe kohën e re 18:54:06; “Shiko detajet” u bë sërish lidhje. Pastaj riktheva orën fillestare me `UPDATE udhetimet SET ora = '09:15' WHERE id = '2';`, rifreskova listën dhe ID 2 tregoi sërish 09:15 (kopja e re 18:54:09).
 
 ## Ku gjendet puna
+Repository: https://github.com/mala19830/rideshare-mobile
 
-- Repository: https://github.com/art-cse/rideshare-mobile
-- Demo prodhimi: https://rideshare-mobile-five.vercel.app
-- Commit-i i PWA: https://github.com/art-cse/rideshare-mobile/commit/ab3af5b95346785ab5d3b4385b49d66fd4f572be
+Skedarët e rinj:
+- `aplikacioni/src/app/manifest.ts`: manifesti i aplikacionit
+- `aplikacioni/public/icons/icon-192.png` dhe `icon-512.png`: ikonat
+- `aplikacioni/src/app/api/udhetimet/route.ts`: `GET /api/udhetimet` me fushat publike
+- `aplikacioni/public/sw.js`: service worker, me rrjetin së pari dhe kopjen në dështim
+- `aplikacioni/public/offline.html`: lexuesi offline, me stilet dhe skriptin brenda dokumentit
+- `aplikacioni/src/components/Pwa.tsx`: regjistrimi i worker-it dhe lidhja për lexuesin
 
-## Testi automatik i përgatitur
+Skedarët që ndryshova:
+- `aplikacioni/src/app/layout.tsx`: shtova `<Pwa />` nën shiritin e sipërm
+- `aplikacioni/src/app/globals.css`: stilet e lidhjes `.pwa-note`
+- `aplikacioni/CLAUDE.md`: rregulli i dizajnit të njëtrajtshëm
 
-`aplikacioni/tests/pwa.spec.ts` përmban një test Playwright për manifestin, ikonat, aktivizimin e service worker-it, kopjen e ruajtur, rifreskimin pa internet dhe kthimin online. Testi **është krijuar në kod**, por nuk është ekzekutuar në një shfletues real gjatë këtij verifikimi. Për ekzekutim me Edge dhe bazën e prodhimit (nga `aplikacioni/`):
-
-```powershell
-$env:PLAYWRIGHT_BASE_URL='https://rideshare-mobile-five.vercel.app'
-npm.cmd run test:browser -- tests/pwa.spec.ts
-Remove-Item Env:PLAYWRIGHT_BASE_URL
-```
-
-Kjo provë automatike nuk e ndryshon orën në databazë; skenari manual 08:15 → 08:25 → 08:15 mbetet veçmas.
+Prova u bë lokalisht; aplikacioni nuk është publikuar në Vercel.
 
 ## Çfarë mbetet për përmirësim
+Në vizitën e parë pa internet nuk ka kopje: worker-i ende nuk është regjistruar dhe lista nuk është ruajtur. Lexuesi duhet të shfaqë “Ende nuk ka listë të ruajtur. Hape aplikacionin me internet dhe provo përsëri.” dhe nuk shpik udhëtime. Leximi offline ka edhe kufizime të tjera:
+- Lexohet vetëm lista publike, jo detajet, paneli ose kërkesa.
+- Kopja mund të jetë e vjetër: ora dhe vendet mund të kenë ndryshuar, siç u pa te Prova 3.
+- Kopja ruhet vetëm në këtë shfletues dhe mund të fshihet.
+- Asnjë veprim nuk konfirmohet pa serverin.
 
-Duhet bërë prova e parë online, pastaj prova pas rifreskimit pa internet dhe prova e përditësimit pasi lidhja të rikthehet. Në vizitën e parë pa kopje të ruajtur, lista nuk mund të shfaqet. Kopja offline mund të jetë e vjetruar dhe nuk konfirmon rezervim. Duhet shënuar koha reale e kopjes dhe rezultati i dukshëm i secilës provë përpara vlerësimit në klasë.
+Për ndryshimet e ardhshme të `offline.html` duhet rritur versioni i cache-s (`rideshare-public-v2`), që worker-i ta ruajë faqen e re.
 
 ## Ndihma nga AI (Artificial Intelligence – inteligjencë artificiale)
-
-AI ndihmoi me përgatitjen e kodit dhe të raportit, krahasimin me kërkesat e ushtrimeve, kontrollin e repository-t dhe kontrollin read-only të Neon/Vercel. Tri provat interaktive në shfletues mbeten për t'u kryer nga përdoruesi; nuk po paraqiten si prova të realizuara.
+Përdora AI (Claude Code) për të shtuar kodin A–F të udhëzimit në projektin tim dhe për ta përshtatur me dizajnin tim: lexuesin offline, lidhjen në layout, ikonat dhe ngjyrat e manifestit. AI testoi çdo hap me `tsc`, lint dhe pamje ekrani në temë të çelët dhe të errët. Me kërkesën time AI ekzekutoi edhe tri provat në një dritare Chrome, ku Network → Offline u aktivizua përmes DevTools Protocol. AI ekzekutoi edhe dy `UPDATE`-t e orës në Neon, nga projekti, pa e hapur `.env.local`. Unë i ndoqa provat në dritare dhe i kontrollova rezultatet. Sekretet nuk janë në kod, në raport ose në GitHub.

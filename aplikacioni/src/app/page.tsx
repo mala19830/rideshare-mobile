@@ -1,32 +1,35 @@
-import Link from "next/link";
 import { KartaUdhetimi } from "@/components/KartaUdhetimi";
 import { lexoUdhetimet, type Udhetim } from "@/lib/udhetimet";
 
+// Lexo bazën përsëri në çdo kërkesë për këtë faqe.
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   let udhetimet: Udhetim[];
-
   try {
     udhetimet = await lexoUdhetimet();
   } catch {
     return (
       <main>
-        <h1>RideShare</h1>
-        <p role="alert">Nuk u lidhëm me databazën. Provo përsëri.</p>
-        <Link className="action" href="/">
+        <h1>Udhëtimet për AAB</h1>
+        <p className="lead" role="alert">
+          Nuk u lidhëm me databazën. Provo përsëri.
+        </p>
+        {/* Rifreskim i plotë, që faqja ta pyesë databazën përsëri. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a className="action" href="/">
           Provo përsëri
-        </Link>
+        </a>
       </main>
     );
   }
 
   return (
     <main>
-      <h1>RideShare · Udhëtimet për AAB</h1>
-      <p>Burimi: Neon · të dhëna fiktive për ushtrime</p>
+      <h1>Udhëtimet për AAB</h1>
+      <p className="lead">Zgjidh një nisje dhe lexo detajet para kërkesës.</p>
       {udhetimet.length === 0 ? (
-        <p>Nuk ka udhëtime për momentin.</p>
+        <p className="lead">Nuk ka udhëtime për momentin.</p>
       ) : (
         <div className="trip-list">
           {udhetimet.map((udhetim) => (

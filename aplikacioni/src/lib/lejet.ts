@@ -3,36 +3,33 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
 import { getSql } from "./db";
 
-export type Profil = { id: string; emri: string; roli: "udhetar" | "shofer" };
-export type Rezultat = "hyr" | "ndaluar" | "fushe" | "ruajtur" | "databaza";
+type Profil = { id: string; emri: string; roli: "udhetar" | "shofer" };
 
 export async function profiliIm(): Promise<Profil | null> {
   const session = await getServerSession(authOptions);
   const id = session?.user?.id;
   if (!id || !/^\d+$/.test(id)) return null;
   const sql = getSql();
-  // Identiteti vjen vetëm nga sesioni; profili i ri fillon si udhëtar.
+  // Çdo hyrje e re fillon si udhëtar. Formulari nuk mund të zgjedhë rol.
   await sql`INSERT INTO profilet (github_id, emri) VALUES (${id}, ${session.user.name ?? "Student"})
     ON CONFLICT (github_id) DO NOTHING`;
   const rows = await sql`SELECT github_id AS id, emri, roli FROM profilet WHERE github_id = ${id}`;
-  return (rows[0] as Profil | undefined) ?? null;
+  return rows[0] as Profil;
 }
 
-export async function ndryshoOren(id: unknown, ora: unknown): Promise<Rezultat> {
-  try {
-    const p = await profiliIm();
-    if (!p) return "hyr";
-    if (p.roli !== "shofer") return "ndaluar";
-    if (typeof id !== "string" || typeof ora !== "string" ||
-      !/^[123]$/.test(id) || !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(ora)) return "fushe";
-    const sql = getSql();
-    // Pronësia dhe roli kontrollohen përsëri në vetë shkrimin në databazë.
-    const rows = await sql`UPDATE udhetimet SET ora = ${ora}
-      WHERE id = ${id} AND shofer_id = ${p.id}
-        AND EXISTS (SELECT 1 FROM profilet WHERE github_id = ${p.id} AND roli = 'shofer')
-      RETURNING id`;
-    return rows.length === 1 ? "ruajtur" : "ndaluar";
-  } catch {
-    return "databaza";
-  }
+export async function ndryshoOren(id: string, ora: string) {
+  const p = await profiliIm();
+  if (!p) return "hyr";
+  if (p.roli !== "shofer") return "ndaluar";
+  if (!/^[123]$/.test(id) || !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(ora)) return "fushe";
+  const sql = getSql();
+  // Pronari vjen nga sesioni; jo nga një fushë e formularit.
+  // Ora e vjetër ruhet si e mëparshme vetëm kur ora vërtet ndryshon.
+  const rows = await sql`UPDATE udhetimet
+    SET ora_e_meparshme = CASE WHEN ora <> ${ora} THEN ora ELSE ora_e_meparshme END,
+      ora = ${ora}
+    WHERE id = ${id} AND shofer_id = ${p.id}
+      AND EXISTS (SELECT 1 FROM profilet WHERE github_id = ${p.id} AND roli = 'shofer')
+    RETURNING id`;
+  return rows.length === 1 ? "ruajtur" : "ndaluar";
 }

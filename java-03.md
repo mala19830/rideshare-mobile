@@ -1,31 +1,23 @@
 # RideShare — Java 3
 
-## Çfarë ndërtova
+Ruaje këtë skedar si `java-03.md` pranë README në repository-n tënd, jashtë dosjes `aplikacioni/`. Mos shto `.txt` pas emrit. Zëvendëso të gjitha shenjat e plotësimit me atë që ndodhi vërtet. Mjafton një fjali e qartë për çdo provë, por trego çfarë prite dhe çfarë pe.
 
-U implementuan lista, komponenti KartaUdhetimi, detajet sipas ID-së, kërkesa e simuluar dhe faqja e udhëtimit që mungon. Fillimisht u përdorën tri udhëtimet fiktive nga një koleksion i përbashkët. Verifikimi më poshtë u krye para kalimit në Neon; aplikacioni final vazhdon me Javët 4–5.
+## Çfarë ndërtova
+Sot përfundova tri ekranet e RideShare në Next.js: listën me tri karta udhëtimesh (/), detajet e udhëtimit (/udhetimi/[id]) dhe kërkesën e simuluar (/udhetimi/[id]/kerkesa), plus faqen “Udhëtimi nuk u gjet” për ID që nuk ekzistojnë. Si shtesë, te kërkesa vendosa mundësinë e anulimit dhe në krye të çdo faqeje një buton për temën e çelët ose të errët.
 
 ## Provat që bëra
-
 ### Prova 1: Lista në telefon
-
-Pritej: saktësisht tri karta, pa scroll horizontal në 375px dhe veprime të paktën 44px. U vërejt: testi automatik në Edge me viewport 375×812 gjeti tri karta, gjerësinë brenda viewport-it dhe lidhjen e kartës të paktën 44px. CSS përdor tekst bazë 16px dhe veprime me min-height 44px. Kaloi. Lexueshmëria në telefon fizik nuk është provuar ende.
+Hapa faqen kryesore në pamjen e telefonit (375 px); prisja tri karta pa lëvizje anash; pashë saktësisht tri karta (Prishtinë, Fushë Kosovë, Lipjan), secila me orën, etiketën e vendeve dhe butonin “Shiko detajet”, pa lëvizje horizontale, si në temën e çelët ashtu edhe në të errët.
 
 ### Prova 2: Detajet e udhëtimit të dytë
-
-Pritej: karta 2 hap /udhetimi/2 me 08:15, “Te stacioni kryesor” dhe 1 vend. U vërejt: të gjitha u konfirmuan nga testi i shfletuesit. Te 3 butoni “Nuk ka vende të lira” ishte disabled; qasja direkte në kërkesën e 3 shfaqi mungesën e vendeve. /udhetimi/99 dhe /udhetimi/99/kerkesa shfaqën “Udhëtimi nuk u gjet” dhe kthimin te lista. Kaloi me të dhënat fillestare.
+Klikova kartën 2; prisja adresën /udhetimi/2 dhe vendtakimin e saj; pashë adresën /udhetimi/2 me titullin “Fushë Kosovë → AAB”, orën 08:15, vendtakimin “Te stacioni kryesor” dhe 1 vend të lirë.
+Shënova edhe çfarë ndodhi te karta 3 (zero vende) dhe te /udhetimi/99: te karta 3 butoni “Nuk ka vende të lira” ishte i çaktivizuar dhe nuk kishte lidhje për kërkesë; te /udhetimi/99 u shfaq “Udhëtimi nuk u gjet”, dhe “Kthehu te lista” më ktheu te tri kartat.
 
 ### Prova 3: Kërkesa në pritje
-
-Pritej: “Simulim: Në pritje”, asnjë rezervim dhe kthim te i njëjti udhëtim. U vërejt: nga karta 2 testi klikoi “Kërko vend”, gjeti titullin dhe tekstin se asnjë vend nuk u rezervua, u kthye te /udhetimi/2 dhe pastaj te lista me tri karta. Kaloi. Faqja nuk kryen shkrim në databazë.
+Klikova Kërko vend; prisja “Simulim: Në pritje”, pa rezervim real; pashë adresën /udhetimi/2/kerkesa me titullin “Simulim: Në pritje” dhe mesazhin se kërkesa nuk është dërguar te shoferi; “Anulo kërkesën” e ktheu statusin në “Simulim: E anuluar” dhe “Kërko përsëri” e riktheu në pritje. Pastaj u ktheva te detajet dhe lista: “Kthehu te detajet” hapi /udhetimi/2 dhe “Kthehu te lista” tregoi sërish tri kartat, me numrin e vendeve të pandryshuar. Provat i bëra me një koleg dhe gjithçka punoi si duhet; anulimi i kërkesës ishte sugjerimi i tij, të cilin e shtuam.
 
 ## Çfarë do të përmirësoj
+Kërkesa dhe anulimi janë vetëm simulim: pas rifreskimit statusi kthehet në “Në pritje” dhe numri i vendeve të lira nuk ndryshon. Javën tjetër dua që kërkesa të ruhet, që anulimi ta lirojë vërtet vendin dhe që lista të tregojë numrin e saktë të vendeve.
 
-Të përsëriten të njëjtat prova kundër Neon pas konfigurimit, si dhe në telefon fizik. Nuk është provuar ende navigimi final me Neon sepse mungon DATABASE_URL. Testi ruhet te aplikacioni/tests/navigation.spec.ts. Nuk pretendohet provë personale nga studenti ose provë me koleg.
-
-## Ku gjendet puna
-
-https://github.com/art-cse/rideshare-mobile — kodi te aplikacioni/src/app, aplikacioni/src/components/KartaUdhetimi.tsx dhe aplikacioni/src/lib/udhetimet.ts. Raporti qëndron në rrënjë; kodi është dërguar në GitHub; dorëzimi i kursit nuk është kryer.
-
-## Verifikimi i prodhimit · 22.10.2026
-
-https://rideshare-mobile-five.vercel.app u hap pa llogari Vercel (HTTP 200). Provat e navigimit u ekzekutuan kundër URL-së reale në Edge me viewport 375×844 dhe 390×844. Të dyja dështuan te lista: priteshin tri karta, u gjetën zero dhe mesazhi i gabimit të databazës. Rezultatet e mëparshme me të dhëna fikse mbeten vetëm prova historike. Detajet, simulimi dhe ID 99 në prodhim me Neon nuk janë provuar ende. Nuk u krye provë në telefon fizik.
+## Ndihma nga AI (Artificial Intelligence – inteligjencë artificiale)
+Përdora AI (Claude Code) për të krijuar projektin Next.js, për të shkruar kodin e tri faqeve, komponentët dhe stilet, dhe për t’i kontrolluar faqet në shfletues. Vetë vendosa për dizajnin (modern, minimalist, jo ai i modelit), kërkova anulimin e kërkesës dhe butonin e temës, dhe i provova ekranet në shfletues paralelisht me AI-në: listën në pamjen e telefonit, detajet e kartës 2, kartën 3 pa vende, adresën /udhetimi/99 dhe rrjedhën e kërkesës me kthimin mbrapa.

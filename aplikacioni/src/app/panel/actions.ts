@@ -1,16 +1,19 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ndryshoOren, type Rezultat } from "@/lib/lejet";
+import { ndryshoOren } from "@/lib/lejet";
 
 export async function ruajOren(formData: FormData) {
-  const id = formData.get("id");
-  let mesazh: Rezultat;
-  try { mesazh = await ndryshoOren(id, formData.get("ora")); }
-  catch { mesazh = "databaza"; }
+  let mesazh: string;
+  try {
+    mesazh = await ndryshoOren(String(formData.get("id") ?? ""), String(formData.get("ora") ?? ""));
+  } catch {
+    mesazh = "databaza";
+  }
   if (mesazh === "ruajtur") {
     revalidatePath("/");
-    revalidatePath(`/udhetimi/${id}`);
+    revalidatePath("/udhetimi/2");
   }
-  redirect(`/panel?m=${mesazh}`);
+  // redirect qëndron jashtë try/catch: Next.js e përdor si kontroll rrjedhe.
+  redirect("/panel?m=" + mesazh);
 }

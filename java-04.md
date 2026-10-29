@@ -1,35 +1,31 @@
 # RideShare — Java 4 · Neon dhe PostgreSQL
 
-Statusi: implementimi lokal është përgatitur; raporti nuk është dorëzim i përfunduar. Provat reale Neon mbeten në pritje të konfigurimit.
-
 ## Çfarë ndërtova
-
-Lista, detajet dhe simulimi lexojnë me await nga helper-ët server-only. getSql përdor DATABASE_URL dhe Neon driver. SQL është e parametrizuar; faqet përdorin force-dynamic. Mesazhet për zero rreshta, lidhje të dështuar dhe ID që mungon janë të dallueshme. schema.sql ka kufizimet për orën/vendet dhe tri rreshtat fiktivë; riekzekutimi nuk i rivendos ndryshimet. Nuk ka fallback të hardkoduar.
+Vargu fiks i udhëtimeve nga Java 3 u zëvendësua me tabelën `udhetimet` në Neon (PostgreSQL). Lista (/) thërret `lexoUdhetimet()`, ndërsa detajet (/udhetimi/[id]) dhe kërkesa (/udhetimi/[id]/kerkesa) thërrasin `gjejUdhetimin(id)`, ku ID kalon si parametër te driver-i Neon, jo si tekst i bashkuar me SQL. Të gjitha leximet bëhen në server me `await`; `DATABASE_URL` lexohet vetëm në `src/lib/db.ts`, i mbrojtur me `server-only`. Faqet kanë `force-dynamic`, prandaj çdo hapje ose rifreskim e pyet databazën përsëri. Ruajta edhe kolonën `shoferi` dhe anulimin e kërkesës nga Java 3.
 
 ## Provat që bëra
-
 ### Prova 1: Ndryshimi në databazë shfaqet në aplikacion
-
-Pritej: 2 ndryshon 08:15 → 08:25 në listë dhe detaje pas rifreskimit; pastaj rikthehet 08:15. **Nuk është provuar ende në Neon**: mungon DATABASE_URL. Hapat: ekzekuto schema.sql, pastaj UPDATE në SQL Editor, rifresko të dyja faqet, rikthe orën dhe kontrollo përsëri. Testi i izoluar PGlite konfirmoi leximin 08:25 nga helper-i dhe ruajtjen gjatë riekzekutimit të SQL-së; kjo nuk provon Neon ose shfletuesin e lidhur me Neon.
+Ndryshova orën e ID 2 nga 08:15 në 08:25 me `UPDATE udhetimet SET ora = '08:25' WHERE id = '2';`, pa prekur kodin. Pas rifreskimit, edhe lista (/) edhe detajet (/udhetimi/2) treguan 08:25 te Liridona H. E ktheva orën në 08:15 dhe pas rifreskimit të dyja faqet treguan sërish 08:15.
 
 ### Prova 2: Lista bosh dhe rikthimi
-
-Pritej: me WHERE false vetëm te lexoUdhetimet shfaqet “Nuk ka udhëtime për momentin.”; pas heqjes kthehen tri karta. **Nuk është provuar ende**: pa lidhje Neon nuk mund të vërehet ky skenar real. Të shtohet përkohësisht WHERE false përpara ORDER BY id, të rifreskohet lista dhe të hiqet kushti pa fshirë rreshtat. Kodi final nuk përmban WHERE false.
+Shtova `WHERE false` vetëm te pyetja e `lexoUdhetimet` në `src/lib/udhetimet.ts`. Faqja nuk u rrëzua: shfaqi titullin dhe mesazhin “Nuk ka udhëtime për momentin.” Pasi e hoqa `WHERE false`, u kthyen të tri kartat (Dren K., Liridona H., Valon B.).
 
 ### Prova 3: Lidhja mungon, rikthimi dhe siguria
-
-Pritej: gabim i qartë kur mungon DATABASE_URL dhe rikuperim pas rikthimit. U vërejt: pa DATABASE_URL, testi i shfletuesit në 375px konfirmoi “Nuk u lidhëm me databazën. Provo përsëri.” në listë, detaje dhe kërkesë, pa karta rezervë. `git check-ignore .env.local` konfirmoi përjashtimin. **Nuk është provuar ende** riemërtimi/rikthimi i një lidhjeje funksionale dhe rinisja, sepse nuk ka kredenciale Neon. Pasi të konfigurohet, ndiq Provat 3–4 në README dhe verifiko rikuperimin.
+Ndryshova përkohësisht emrin `DATABASE_URL` në `.env.local` dhe rinisa serverin. Aplikacioni nuk u rrëzua, por shfaqi mesazhin “Nuk u lidhëm me databazën. Provo përsëri.” me butonin “Provo përsëri” — ndryshe nga mesazhi i listës bosh. Riktheva emrin, rinisa serverin dhe udhëtimet u shfaqën sërish. `.env.local` nuk shfaqet në listën e ndryshimeve në GitHub Desktop, sepse `.gitignore` i përjashton skedarët `.env*`.
 
 ## Ku gjendet puna
+- `aplikacioni/schema.sql`: tabela `udhetimet` me tri udhëtime fiktive
+- `aplikacioni/src/lib/db.ts` (i ri): lidhja private me Neon
+- `aplikacioni/src/lib/udhetimet.ts`: pyetjet SQL `lexoUdhetimet` dhe `gjejUdhetimin`
+- `aplikacioni/src/app/page.tsx`: lista
+- `aplikacioni/src/app/udhetimi/[id]/page.tsx`: detajet
+- `aplikacioni/src/app/udhetimi/[id]/kerkesa/page.tsx`: simulimi i kërkesës
+- `aplikacioni/package.json`: paketat `@neondatabase/serverless` dhe `server-only`
 
-https://github.com/art-cse/rideshare-mobile
-
-SQL: aplikacioni/schema.sql. Kodi: src/lib/db.ts, src/lib/udhetimet.ts dhe tri faqet te aplikacioni/src/app. Paketat dhe lockfile janë te aplikacioni/. Verifikimi i SQL-së gjendet te aplikacioni/tests/lejet.test.ts. Produksioni: https://rideshare-mobile-five.vercel.app (publik, por pa lidhje Neon funksionale).
+Repository: https://github.com/mala19830/rideshare-mobile
 
 ## Çfarë mbetet për përmirësim
+Kërkesa “Në pritje” dhe anulimi mbeten simulim: nuk ruhet asnjë rezervim dhe numri i vendeve në Neon nuk ndryshon. Aplikacioni vetëm lexon; ndryshimet i bën pronari i databazës në SQL Editor. Hapi i ardhshëm: hyrja e shoferit dhe kontrolli në server që secili shofer ndryshon vetëm udhëtimet e veta.
 
-Të lidhet Neon, të kryhen tri provat reale dhe të rikontrollohen 3/99. Navigimi 3/99 kaloi në Javën 3 para migrimit; rreshti i panjohur u kontrollua edhe në PGlite. Kërkesa “Në pritje” mbetet simulim; nuk ka rezervim real. Pas provave të dokumentohen rezultatet e vërejtura dhe të përgatitet dorëzimi.
-
-## Verifikimi i prodhimit · 22.10.2026
-
-https://rideshare-mobile-five.vercel.app u hap pa llogari Vercel (HTTP 200). DATABASE_URL mungon në konfigurimin lokal dhe në listën e variablave Vercel. Në URL-në publike u vërejt gabimi i databazës në listë, detaje dhe kërkesë në 375px/390px; nuk u shfaqën të dhëna rezervë. Nuk u shkaktua artificialisht dështim në prodhim. Ndryshimi 08:25/rikthimi, WHERE false lokalisht dhe rikuperimi pas konfigurimit mbeten të paprovuara. Nuk është kontrolluar një databazë reale ose pronësia reale.
+## Ndihma nga AI (Artificial Intelligence – inteligjencë artificiale)
+Përdora AI (Claude Code) për të përshtatur kodin e udhëzimit të Javës 4 me projektin tim (kolona `shoferi`, komponenti i anulimit dhe stilet e Javës 3), për të shkruar `schema.sql` dhe për të kontrolluar build-in. Lidhjen me databazën e bëra vetë: krijova projektin në Neon, ekzekutova `schema.sql` në SQL Editor dhe vendosa `DATABASE_URL` në `.env.local`. Provën 3 e bëra vetë; provat 1 dhe 2 i ekzekutoi AI me kërkesën time, ndërsa unë kontrollova rezultatet në aplikacion. Verifikova gjithashtu që `.env.local` nuk shfaqet në GitHub Desktop.
