@@ -1,7 +1,7 @@
 # RideShare · Java 7
 
 ## Rasti im
-GitHub: mala19830
+GitHub: ermirshabani-22
 Kodi: P7-704
 Skenari i zgjedhur (numri dhe titulli, nga Rastet 1–5): Rasti 1 · Lista dhe detajet
 ID i udhëtimit në projektin tim: 2
