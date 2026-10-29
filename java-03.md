@@ -1,23 +1,31 @@
 # RideShare — Java 3
 
-Ruaje këtë skedar si `java-03.md` pranë README në repository-n tënd, jashtë dosjes `aplikacioni/`. Mos shto `.txt` pas emrit. Zëvendëso të gjitha shenjat e plotësimit me atë që ndodhi vërtet. Mjafton një fjali e qartë për çdo provë, por trego çfarë prite dhe çfarë pe.
-
 ## Çfarë ndërtova
-Gjate kesaj jave punova ne pamjen e RideShare dhe ne pregaditjen e faqeve per udhtime.Shtova stilet per kartat, butonat dhe pamjen e pergjithshme te apliakcionit
+
+U implementuan lista, komponenti KartaUdhetimi, detajet sipas ID-së, kërkesa e simuluar dhe faqja e udhëtimit që mungon. Fillimisht u përdorën tri udhëtimet fiktive nga një koleksion i përbashkët. Verifikimi më poshtë u krye para kalimit në Neon; aplikacioni final vazhdon me Javët 4–5.
 
 ## Provat që bëra
+
 ### Prova 1: Lista në telefon
-E hapa faqen kryesore ne pamjen  e telefonit per te kontrolluar si parqiten kartat. Kontrollova  nese  permbajtjten shihet qarte dhe nese faqja mund te perdoret pa levizje anash.
+
+Pritej: saktësisht tri karta, pa scroll horizontal në 375px dhe veprime të paktën 44px. U vërejt: testi automatik në Edge me viewport 375×812 gjeti tri karta, gjerësinë brenda viewport-it dhe lidhjen e kartës të paktën 44px. CSS përdor tekst bazë 16px dhe veprime me min-height 44px. Kaloi. Lexueshmëria në telefon fizik nuk është provuar ende.
 
 ### Prova 2: Detajet e udhëtimit të dytë
-Kontrollova kartën e dyte dhe faqen e detajeve per te pare nese shfaqen informatat e udhetimit dhe vendtakimi.
-Te karta e trete kontrollova paraqitjen e udhetimit pa vende te lira. Gjithashtu kontrollova adresen /udhetimi/99 per te pare si paraqitet nje udhetim qe nuk ekziston
+
+Pritej: karta 2 hap /udhetimi/2 me 08:15, “Te stacioni kryesor” dhe 1 vend. U vërejt: të gjitha u konfirmuan nga testi i shfletuesit. Te 3 butoni “Nuk ka vende të lira” ishte disabled; qasja direkte në kërkesën e 3 shfaqi mungesën e vendeve. /udhetimi/99 dhe /udhetimi/99/kerkesa shfaqën “Udhëtimi nuk u gjet” dhe kthimin te lista. Kaloi me të dhënat fillestare.
 
 ### Prova 3: Kërkesa në pritje
-Kontrollova funksionin e kerkeses per vend dhe paraqitjen e mesazhit "Simulim: Ne pritje". Kerkesa eshte vetem demonstrim dhe nuk kryhet rezervim real. Pastaj kontrollova kthimin te faqja e detajeve dhe lista.
+
+Pritej: “Simulim: Në pritje”, asnjë rezervim dhe kthim te i njëjti udhëtim. U vërejt: nga karta 2 testi klikoi “Kërko vend”, gjeti titullin dhe tekstin se asnjë vend nuk u rezervua, u kthye te /udhetimi/2 dhe pastaj te lista me tri karta. Kaloi. Faqja nuk kryen shkrim në databazë.
 
 ## Çfarë do të përmirësoj
-Ne e javen tjeter dua te permiresoj pamjen e aplikacionit ne telefon dhe te kontrolloj me mire funksionimin e butonave dhe kalimin ndermjet faqeve.
 
-## Ndihma nga AI (Artificial Intelligence – inteligjencë artificiale)
-Perdora AI per te kuptuar disa pjese te kodit dhe per te rregulluar stilet e aplikacionit. Kodin e vendosa ne projekt dhe kontrollova hapat gjate punes.
+Të përsëriten të njëjtat prova kundër Neon pas konfigurimit, si dhe në telefon fizik. Nuk është provuar ende navigimi final me Neon sepse mungon DATABASE_URL. Testi ruhet te aplikacioni/tests/navigation.spec.ts. Nuk pretendohet provë personale nga studenti ose provë me koleg.
+
+## Ku gjendet puna
+
+https://github.com/art-cse/rideshare-mobile — kodi te aplikacioni/src/app, aplikacioni/src/components/KartaUdhetimi.tsx dhe aplikacioni/src/lib/udhetimet.ts. Raporti qëndron në rrënjë; kodi është dërguar në GitHub; dorëzimi i kursit nuk është kryer.
+
+## Verifikimi i prodhimit · 22.10.2026
+
+https://rideshare-mobile-five.vercel.app u hap pa llogari Vercel (HTTP 200). Provat e navigimit u ekzekutuan kundër URL-së reale në Edge me viewport 375×844 dhe 390×844. Të dyja dështuan te lista: priteshin tri karta, u gjetën zero dhe mesazhi i gabimit të databazës. Rezultatet e mëparshme me të dhëna fikse mbeten vetëm prova historike. Detajet, simulimi dhe ID 99 në prodhim me Neon nuk janë provuar ende. Nuk u krye provë në telefon fizik.

@@ -1,0 +1,11 @@
+.git
+.env*
+**/.env*
+**/node_modules
+**/.next
+**/.vercel
+**/*.tsbuildinfo
+**/test-results
+**/playwright-report
+.agents
+skills-lock.json

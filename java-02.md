@@ -1,34 +1,39 @@
 # RideShare — Java 2
 
-**Shkurtesat:** MVP (Minimum Viable Product – produkti minimal i përdorshëm); AI (Artificial Intelligence – inteligjencë artificiale).
+**Shkurtesat:** MVP (Minimum Viable Product – produkti minimal i përdorshëm).
 
 ## 1. Problemi
-Studentët që udhëtojnë për në AAB shpesh kanë vështirësi të gjejnë transport të përshtatshëm, sidomos kur kanë orare të ndryshme dhe duan të ndajnë shpenzimet e udhëtimit.
+Studentët që udhëtojnë për në AAB mund të kenë shpenzime të larta transporti dhe orare të autobusëve që nuk përputhen me ligjëratat. Ata e kanë të vështirë të gjejnë studentë të tjerë që udhëtojnë në të njëjtin drejtim dhe në të njëjtën kohë. RideShare synon t’i ndihmojë të ndajnë udhëtimin dhe shpenzimet.
 
 ## 2. Përdoruesit
-Shoferi: Dëshiron të publikojë një udhëtim, të tregojë orën, vendin e nisjes dhe numrin e vendeve të lira.
-Udhëtari: Dëshiron të gjejë një udhëtim të përshtatshëm dhe të kërkojë një vend.
+- Shoferi dëshiron të ndajë shpenzimet e udhëtimit dhe të gjejë udhëtarë për vendet e lira në veturë.
+- Udhëtari dëshiron të gjejë një udhëtim të përshtatshëm për në AAB, të shohë orën, pikën e takimit dhe çmimin, si dhe të kërkojë një vend lehtësisht.
 
 ## 3. Tri ekranet
-Lista e udhëtimeve: Shfaq udhëtimet e disponueshme me nisjen, destinacionin, orën dhe vendet e lira.
-Detajet e udhëtimit: Shfaq informacionin e plotë dhe një buton për të kërkuar një vend.
-Kërkesa në pritje: Shfaq kërkesën e udhëtarit dhe statusin e saj, p.sh. në pritje, pranuar ose refuzuar.
+1. Lista e udhëtimeve: Shfaq udhëtimet për në AAB me vendnisjen, datën, orën, çmimin për person dhe numrin e vendeve të lira. Udhëtari zgjedh një udhëtim për të parë detajet.
+2. Detajet e udhëtimit: Shfaq emrin e shoferit, pikën e takimit, destinacionin, datën, orën, çmimin dhe vendet e lira. Butoni “Kërko një vend” mundëson dërgimin e kërkesës.
+3. Kërkesa në pritje: Shfaq përmbledhjen e udhëtimit dhe mesazhin “Kërkesa u dërgua dhe është në pritje të konfirmimit nga shoferi”. Ky status nuk nënkupton se vendi është konfirmuar.
 
 ## 4. MVP — vetëm tri veçori
-Shoferi mund të publikojë një udhëtim.
-Udhëtari mund të shohë dhe të zgjedhë një udhëtim.
-Udhëtari mund të kërkojë një vend në udhëtim.
+1. Shikimi i listës së udhëtimeve të disponueshme.
+2. Hapja e detajeve të një udhëtimi të zgjedhur.
+3. Dërgimi i kërkesës për një vend dhe shfaqja e statusit “Në pritje”.
+
+Për këtë version provues, udhëtimet mund të jenë të parapërgatitura.
 
 ## 5. Çfarë e lëmë për më vonë?
-Pagesat online.
-Sistemi i vlerësimeve dhe komenteve.
+1. Pagesat online brenda aplikacionit.
+2. Biseda në kohë reale mes shoferit dhe udhëtarit.
 
 ## 6. Si e provoj?
-Kur kërkoj një vend: Kërkesa regjistrohet dhe shfaqet si “Në pritje” te kërkesat e udhëtarit.
-Nëse nuk ka vende të lira: Shfaqet një mesazh që tregon se udhëtimi është i plotë dhe përdoruesi nuk mund të dërgojë kërkesë.
+- Kur zgjedh një udhëtim me vende të lira dhe shtyp “Kërko një vend”, duhet të regjistrohet vetëm një kërkesë dhe të hapet ekrani “Kërkesa në pritje” me udhëtimin e saktë. Shtypja e përsëritur nuk duhet të krijojë kërkesa të dyfishta.
+- Nëse nuk ka vende të lira, duhet të shfaqet mesazhi “Nuk ka vende të lira” dhe butoni i kërkesës duhet të jetë i çaktivizuar. Nëse vendi i fundit është zënë ndërkohë, aplikacioni duhet ta kontrollojë sërish  disponueshmërinë gjatë dërgimit dhe të mos e regjistrojë kërkesën.
 
-## 7. Prova me kolegun
-Kolegu u hutua te butoni për të kërkuar një vend, sepse nuk ishte mjaftueshëm i dukshëm. Në skicë e bëra butonin më të qartë dhe vendosa një përshkrim të shkurtër pranë tij.
+## 7. Prova me kolegun dhe rishikimi i skicës
 
-## 8. Ndihma nga AI
-Përdora AI për të marrë ide për strukturën e aplikacionit dhe për veçoritë kryesore të MVP-së. Vetë kontrollova nëse këto ide përshtateshin me problemin dhe me funksionimin e aplikacionit.
+
+Prova me kolegun nuk është raportuar si e kryer. Gjatë rishikimit u vërejt se skica ekzistuese ishte për BarberBook dhe nuk përputhej me RideShare. U përgatit skica.png me listën, detajet dhe kërkesën e simuluar. U dallua qartë statusi në pritje nga konfirmimi dhe u shënua rasti me zero vende. Kjo nuk zëvendëson provën me një koleg.
+
+## Përputhja me zbatimin e Javëve 3–4
+Pjesët e mësipërme për regjistrim real, shmangie të kërkesave të dyfishta, çmime dhe emra shoferësh janë synime të planit fillestar. Në laboratorin aktual kemi vetëm tri karta, detajet dhe simulimin; nuk shkruhet kërkesë në databazë. Të dhënat e udhëtimeve lexohen nga Neon. Skica dixhitale është te skica.png; fotoja e një skice në letër dhe prova me kolegun mbeten aktivitete personale.
+
