@@ -1,7 +1,7 @@
 # RideShare · Java 7
 
 ## Rasti im
-GitHub: ermirshabani-22
+GitHub: mala19830
 Kodi: P7-704
 Skenari i zgjedhur (numri dhe titulli, nga Rastet 1–5): Rasti 1 · Lista dhe detajet
 ID i udhëtimit në projektin tim: 2
@@ -22,7 +22,7 @@ Kjo faqe serveri lexon udhëtimin nga Neon dhe kontrollon nëse përdoruesi ësh
 
 ## Versionet
 Para: https://github.com/mala19830/rideshare-mobile/commit/14e5611cc21ed32bc4bf9a3e71b1d5c9fa135698
-Pas: https://github.com/mala19830/rideshare-mobile/commit/a74e6b660fcfee1a8790ada76699576e5d16889a
+Pas: https://github.com/mala19830/rideshare-mobile/commit/9ec297140ffec0ae623837d7825159cce3289494
 
 ## Provat që bëra
 ### Prova 1
