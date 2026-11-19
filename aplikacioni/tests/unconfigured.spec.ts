@@ -8,10 +8,10 @@ test("pa Neon: gabimi është i qartë; paneli publik kërkon hyrje", async ({ p
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   await page.goto("/panel");
-  await expect(page.getByRole("button", { name: "Hyr me GitHub" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("Hyrja me GitHub është përkohësisht e padisponueshme.");
   await expect(page.locator("form")).toHaveCount(0);
   await page.goto("/panel?m=ndaluar");
-  await expect(page.getByRole("status")).toContainText("Nuk ke leje");
+  await expect(page.getByRole("status").filter({ hasText: "Nuk ke leje" })).toBeVisible();
   await page.goto("/panel?m=toString");
-  await expect(page.getByRole("button", { name: "Hyr me GitHub" })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveCount(1);
 });

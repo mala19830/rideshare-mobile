@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { KartaUdhetimi } from "@/components/KartaUdhetimi";
 import type { Udhetim } from "@/lib/udhetimet";
 
-export function ListaUdhetimeve({ udhetimet, preferuarat, numri, authenticated }: {
-  udhetimet: Udhetim[]; preferuarat: string[]; numri: number; authenticated: boolean;
+export function ListaUdhetimeve({ udhetimet, preferuarat }: {
+  udhetimet: Udhetim[]; preferuarat: string[];
 }) {
   const [udhetimetAktuale, setUdhetimetAktuale] = useState(udhetimet);
   const [ids, setIds] = useState(() => new Set(preferuarat));
   const idsRef = useRef(new Set(preferuarat));
-  const [total, setTotal] = useState(numri);
   const [pending, setPending] = useState(() => new Set<string>());
   const [mesazhi, setMesazhi] = useState("");
   const pendingRef = useRef(new Set<string>());
@@ -39,7 +39,6 @@ export function ListaUdhetimeve({ udhetimet, preferuarat, numri, authenticated }
     else next.delete(id);
     idsRef.current = next;
     setIds(next);
-    setTotal((value) => Math.max(0, value + (saved ? 1 : -1)));
   }
 
   async function ndryshoPreferimin(id: string) {
@@ -68,24 +67,19 @@ export function ListaUdhetimeve({ udhetimet, preferuarat, numri, authenticated }
 
   return <>
     <div className="favorites-toolbar">
-      <p>Të preferuarat: <strong>{total}</strong></p>
-      {authenticated && <Link className="action" href="/preferuarat">Shiko udhëtimet e mia favorite</Link>}
+      <Link className="action secondary" href="/preferuarat">Udhëtimet e mia favorite ({ids.size})</Link>
     </div>
-    <p className="favorite-status" aria-live="polite">{mesazhi}</p>
+    {mesazhi && <p role="status">{mesazhi}</p>}
     <div className="trip-list">
       {udhetimetAktuale.map((udhetim) => {
         const saved = ids.has(udhetim.id);
         const waiting = pending.has(udhetim.id);
-        return <article className="trip-card" key={udhetim.id}>
-          <h2>{udhetim.nisja} – {udhetim.destinacioni}</h2>
-          <p>Ora: {udhetim.ora} · Vende të lira: {udhetim.vende}</p>
-          <Link className="action" href={`/udhetimi/${udhetim.id}`}>Shiko detajet</Link>
-          {authenticated ? <button className="favorite-button" type="button" disabled={waiting}
+        return <KartaUdhetimi key={udhetim.id} udhetim={udhetim}>
+          <button className="action secondary" type="button" disabled={waiting}
             aria-pressed={saved} onClick={() => void ndryshoPreferimin(udhetim.id)}>
             <span aria-hidden="true">{saved ? "★" : "☆"}</span> {waiting ? (saved ? "Po ruhet…" : "Po hiqet…") : saved ? "Hiqe nga favoritët" : "Ruaj si favorit"}
-          </button> : <Link className="favorite-button" href="/panel">☆ Hyr për ta ruajtur</Link>}
-          <small className="favorite-note">Preferim personal · jo rezervim</small>
-        </article>;
+          </button>
+        </KartaUdhetimi>;
       })}
     </div>
   </>;

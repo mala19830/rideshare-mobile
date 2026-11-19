@@ -1,12 +1,12 @@
 import "server-only";
-import { getServerSession } from "next-auth";
-import { authOptions } from "./auth";
+import { cache } from "react";
+import { lexoSesionin } from "./auth";
 import { getSql } from "./db";
 
 type Profil = { id: string; emri: string; roli: "udhetar" | "shofer" };
 
-export async function profiliIm(): Promise<Profil | null> {
-  const session = await getServerSession(authOptions);
+export const profiliIm = cache(async (): Promise<Profil | null> => {
+  const session = await lexoSesionin();
   const id = session?.user?.id;
   if (!id || !/^\d+$/.test(id)) return null;
   const sql = getSql();
@@ -15,7 +15,7 @@ export async function profiliIm(): Promise<Profil | null> {
     ON CONFLICT (github_id) DO NOTHING`;
   const rows = await sql`SELECT github_id AS id, emri, roli FROM profilet WHERE github_id = ${id}`;
   return rows[0] as Profil;
-}
+});
 
 export async function ndryshoOren(id: string, ora: string) {
   const p = await profiliIm();

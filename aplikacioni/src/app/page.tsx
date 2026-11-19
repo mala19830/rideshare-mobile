@@ -1,4 +1,7 @@
 import { KartaUdhetimi } from "@/components/KartaUdhetimi";
+import { ListaUdhetimeve } from "@/components/ListaUdhetimeve";
+import { profiliIm } from "@/lib/lejet";
+import { lexoIdPreferimesh } from "@/lib/preferimet";
 import { lexoUdhetimet, type Udhetim } from "@/lib/udhetimet";
 
 // Lexo bazën përsëri në çdo kërkesë për këtë faqe.
@@ -24,12 +27,24 @@ export default async function Home() {
     );
   }
 
+  let preferuarat: string[] | undefined;
+  let gabimPreferimesh = false;
+  try {
+    const profili = await profiliIm();
+    if (profili) preferuarat = await lexoIdPreferimesh(profili.id);
+  } catch {
+    gabimPreferimesh = true;
+  }
+
   return (
     <main>
       <h1>Udhëtimet për AAB</h1>
       <p className="lead">Zgjidh një nisje dhe lexo detajet para kërkesës.</p>
+      {gabimPreferimesh && <p className="note" role="status">Udhëtimet e preferuara s’u ngarkuan. Provo përsëri më vonë.</p>}
       {udhetimet.length === 0 ? (
         <p className="lead">Nuk ka udhëtime për momentin.</p>
+      ) : preferuarat ? (
+        <ListaUdhetimeve udhetimet={udhetimet} preferuarat={preferuarat} />
       ) : (
         <div className="trip-list">
           {udhetimet.map((udhetim) => (

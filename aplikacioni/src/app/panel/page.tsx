@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Hyrja from "@/components/Hyrja";
+import { hyrjaAktive } from "@/lib/auth";
 import { profiliIm } from "@/lib/lejet";
 import { ruajOren } from "./actions";
 
@@ -23,7 +24,7 @@ function adresaPrapa(prapa: string | string[] | undefined) {
 
 export default async function Panel({ searchParams }: PageProps<"/panel">) {
   const { m, prapa } = await searchParams;
-  const mesazh = typeof m === "string" ? mesazhet[m] : undefined;
+  const mesazh = typeof m === "string" && Object.hasOwn(mesazhet, m) ? mesazhet[m] : undefined;
 
   let p;
   try {
@@ -53,7 +54,11 @@ export default async function Panel({ searchParams }: PageProps<"/panel">) {
           <p>ID ime GitHub: <code>{p.id}</code></p>
         </>
       )}
-      <Hyrja brenda={Boolean(p)} prapa={adresaPrapa(prapa)} />
+      {hyrjaAktive ? (
+        <Hyrja brenda={Boolean(p)} prapa={adresaPrapa(prapa)} />
+      ) : (
+        <p className="note" role="status">Hyrja me GitHub është përkohësisht e padisponueshme.</p>
+      )}
       {p?.roli === "shofer" ? (
         <form action={ruajOren} className="trip-card">
           <h2>Ndrysho orën e udhëtimit tim</h2>
@@ -68,7 +73,6 @@ export default async function Panel({ searchParams }: PageProps<"/panel">) {
       ) : (
         p && <p>Si udhëtar mund të shohësh udhëtimet; nuk mund të ndryshosh orën e shoferit.</p>
       )}
-      <p className="trip-meta">Kërkesa për vend mbetet simulim këtë javë.</p>
     </main>
   );
 }

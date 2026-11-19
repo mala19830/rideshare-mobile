@@ -1,8 +1,9 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { OraUdhetimit } from "@/components/OraUdhetimit";
-import { tekstiVendeve, type Udhetim } from "@/lib/udhetimet";
+import type { Udhetim } from "@/lib/udhetimet";
 
-export function KartaUdhetimi({ udhetim }: { udhetim: Udhetim }) {
+export function KartaUdhetimi({ udhetim, children }: { udhetim: Udhetim; children?: ReactNode }) {
   return (
     <article className="trip-card">
       <h2>
@@ -14,12 +15,14 @@ export function KartaUdhetimi({ udhetim }: { udhetim: Udhetim }) {
         </span>
         <span>Shoferi: {udhetim.shoferi}</span>
         <span className={udhetim.vende > 0 ? "badge" : "badge full"}>
-          {tekstiVendeve(udhetim.vende)}
+          {udhetim.vende === 0 ? "Nuk ka vende të lira" :
+            udhetim.vende === 1 ? "1 vend i lirë" : `${udhetim.vende} vende të lira`}
         </span>
       </p>
       <Link className="action secondary" href={`/udhetimi/${udhetim.id}`}>
         Shiko detajet
       </Link>
+      {children}
     </article>
   );
 }

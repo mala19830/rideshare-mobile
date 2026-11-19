@@ -1,14 +1,14 @@
-import { PGlite } from "@electric-sql/pglite";
+import { PGlite, type Transaction } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, beforeEach, test, expect, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ session: vi.fn(), sql: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("next-auth", () => ({ getServerSession: mocks.session }));
-vi.mock("../src/lib/auth", () => ({ authOptions: {} }));
+vi.mock("../src/lib/auth", () => ({ lexoSesionin: mocks.session }));
 vi.mock("../src/lib/db", () => ({ getSql: () => mocks.sql }));
 import { ndryshoOren, profiliIm } from "../src/lib/lejet";
 import { lexoUdhetimet, gjejUdhetimin } from "../src/lib/udhetimet";
+import { GET as lexoGjendjen, POST as ndryshoGjendjen } from "../src/app/api/udhetimet/[id]/ndjekja/route";
 
 const db = new PGlite();
 async function query(strings: TemplateStringsArray, ...values: unknown[]) {
@@ -82,12 +82,60 @@ test("stale form after signout requires login", async () => {
   mocks.session.mockResolvedValue(null);
   expect(await ndryshoOren("2", "08:25")).toBe("hyr");
 });
-test("database failures are distinct", async () => {
+test("database failures propagate for the panel action to handle", async () => {
   mocks.sql.mockRejectedValue(new Error("test connection failure"));
-  expect(await ndryshoOren("2", "08:25")).toBe("databaza");
+  await expect(ndryshoOren("2", "08:25")).rejects.toThrow("test connection failure");
 });
 test("database constraints reject invalid time, seats and role", async () => {
   await expect(db.exec("UPDATE udhetimet SET ora = '24:00' WHERE id = '2'")).rejects.toThrow();
   await expect(db.exec("UPDATE udhetimet SET vende = -1 WHERE id = '2'")).rejects.toThrow();
   await expect(db.exec("UPDATE profilet SET roli = 'admin'")).rejects.toThrow();
+});
+
+test("accepting requests consumes the last seat only once", async () => {
+  await db.exec(readFileSync("schema-java08.sql", "utf8"));
+  await driver();
+  await db.exec(`
+    INSERT INTO profilet (github_id, emri) VALUES ('67890', 'Udhëtari 1'), ('67891', 'Udhëtari 2');
+    UPDATE udhetimet SET vende = 1 WHERE id = '2';
+    INSERT INTO kerkesat_udhetimit (udhetim_id, udhetar_id)
+      VALUES ('2', '67890'), ('2', '67891');
+  `);
+  type Statement = { text: string; values: unknown[] };
+  const thirrjaSql = (strings: TemplateStringsArray, ...values: unknown[]) => {
+    const text = strings.reduce((s, part, i) => s + (i ? `$${i}` : "") + part, "");
+    return {
+      text,
+      values,
+      then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) =>
+        db.query(text, values).then(({ rows }) => resolve(rows), reject),
+    };
+  };
+  const transaction = (statements: Statement[]) => db.transaction(async (tx: Transaction) => {
+    const results = [];
+    for (const { text, values } of statements) results.push((await tx.query(text, values)).rows);
+    return results;
+  });
+  mocks.sql.mockImplementation(thirrjaSql);
+  Object.assign(mocks.sql, { transaction });
+  const url = "http://localhost/api/udhetimet/2/ndjekja";
+  const context = { params: Promise.resolve({ id: "2" }) };
+  try {
+    const state = await (await lexoGjendjen(new Request(url), context)).json();
+    const [first, second] = state.kerkesatPerShoferin;
+    const accept = (id: string) => ndryshoGjendjen(new Request(url, {
+      method: "POST",
+      body: JSON.stringify({ veprim: "pergjigju", kerkesaId: id, vendimi: "prano" }),
+    }), context);
+
+    const attempts = await Promise.all([accept(first.id), accept(second.id)]);
+    expect(attempts.map((response) => response.status).sort()).toEqual([200, 409]);
+    expect((await accept(first.id)).status).toBe(409);
+    expect((await gjejUdhetimin("2"))?.vende).toBe(0);
+    const updated = await (await lexoGjendjen(new Request(url), context)).json();
+    expect(updated.kerkesatPerShoferin.map((row: { status: string }) => row.status).sort())
+      .toEqual(["ne_pritje", "pranuar"]);
+  } finally {
+    await db.exec("DELETE FROM kerkesat_udhetimit WHERE udhetim_id = '2'; DELETE FROM profilet WHERE github_id = '67891'; UPDATE udhetimet SET vende = 1 WHERE id = '2';");
+  }
 });

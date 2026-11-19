@@ -34,7 +34,7 @@ UPDATE udhetimet SET shofer_id = '<GITHUB_NUMERIC_ID>' WHERE id = '2';
 Në Vercel, lidhni repository-n `mala19830/rideshare-mobile`, zgjidhni branch-in `main` dhe caktoni Root Directory `aplikacioni`. Krijoni GitHub OAuth App nën llogarinë `mala19830` dhe përdorni domain-in e deployment-it për callback URL-në. Për shembull, për domain-in `rideshare-mobile-eight-phi.vercel.app` përdorni:
 `https://rideshare-mobile-eight-phi.vercel.app/api/auth/callback/github`.
 
-Aplikacioni hapet edhe pa këto sekrete në mënyrën publike demonstrative: shfaq udhëtime fiktive, por nuk ruan kërkesa. Hyrja dhe paneli i shoferit mbeten të çaktivizuara derisa të konfigurohet OAuth.
+Lista dhe detajet janë publike dhe lexojnë nga Neon. Paneli shfaq gjendjen e hyrjes edhe kur mungon konfigurimi OAuth. Kërkesat reale dhe të preferuarat kërkojnë hyrje me GitHub. Për skemën e plotë aplikoni `schema.sql`, `schema-java05.sql`, `schema-java08.sql` dhe `schema-java09.sql` në atë rend. `schema-java10.sql` shton udhëtime për prova.
 
 Në Vercel → Project Settings → Environment Variables, shtoni `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GITHUB_ID` dhe `GITHUB_SECRET` për Production. Përdorni vlera private të krijuara për llogaritë tuaja; mos i vendosni këtu, në Git ose në logje. Për Preview, caktoni variablat dhe URL-në përkatëse veçmas nëse aktivizoni preview deployments. Pas ndryshimit, bëni redeploy.
 

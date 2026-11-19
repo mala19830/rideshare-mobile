@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OraUdhetimit } from "@/components/OraUdhetimit";
+import { lexoSesionin } from "@/lib/auth";
 import { gjejUdhetimin, type Udhetim } from "@/lib/udhetimet";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ export default async function Detajet({
 
   // Mungesa e udhëtimit nuk është gabim lidhjeje, prandaj qëndron jashtë try/catch.
   if (!udhetim) notFound();
+  const brenda = Boolean(await lexoSesionin().catch(() => null));
 
   return (
     <main>
@@ -59,9 +61,9 @@ export default async function Detajet({
           <dd>{udhetim.vende}</dd>
         </div>
       </dl>
-      {udhetim.vende > 0 ? (
+      {udhetim.vende > 0 || brenda ? (
         <Link className="action" href={`/udhetimi/${id}/kerkesa`}>
-          Kërko vend
+          {udhetim.vende > 0 ? "Kërko vend" : "Shiko kërkesën"}
         </Link>
       ) : (
         <button className="action" disabled>

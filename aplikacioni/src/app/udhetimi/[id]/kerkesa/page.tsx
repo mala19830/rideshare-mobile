@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { OraUdhetimit } from "@/components/OraUdhetimit";
-import { StatusiKerkeses } from "@/components/StatusiKerkeses";
+import { NdjekjaVendndodhjes } from "@/components/NdjekjaVendndodhjes";
 import { profiliIm } from "@/lib/lejet";
 import { gjejUdhetimin, type Udhetim } from "@/lib/udhetimet";
 
@@ -56,11 +56,8 @@ export default async function Kerkesa({
           Ora <OraUdhetimit udhetim={udhetim} />
         </span>
       </p>
-      {udhetim.vende > 0 ? (
-        <StatusiKerkeses udhetim={udhetim} />
-      ) : (
-        <h1>Nuk ka vende të lira.</h1>
-      )}
+      <h1>{brenda || udhetim.vende > 0 ? "Kërkesat për udhëtimin" : "Nuk ka vende të lira."}</h1>
+      {brenda && <NdjekjaVendndodhjes key={id} udhetimId={id} />}
     </main>
   );
 }

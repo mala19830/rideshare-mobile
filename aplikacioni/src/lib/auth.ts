@@ -1,16 +1,16 @@
 import "server-only";
-import type { DefaultSession, NextAuthOptions } from "next-auth";
+import { getServerSession, type DefaultSession, type NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
+
+const clientId = process.env.GITHUB_ID;
+const clientSecret = process.env.GITHUB_SECRET;
+const secret = process.env.NEXTAUTH_SECRET;
+export const hyrjaAktive = Boolean(clientId && clientSecret && secret);
 
 // GitHub verifikon identitetin. Rolin e lexojmë veçmas nga Neon.
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
-  providers: [
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID ?? "",
-      clientSecret: process.env.GITHUB_SECRET ?? "",
-    }),
-  ],
+  secret,
+  providers: clientId && clientSecret && secret ? [GitHubProvider({ clientId, clientSecret })] : [],
   session: { strategy: "jwt", maxAge: 2 * 60 * 60 },
   callbacks: {
     async session({ session, token }) {
@@ -19,6 +19,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+export async function lexoSesionin() {
+  return hyrjaAktive ? getServerSession(authOptions) : null;
+}
 
 declare module "next-auth" {
   interface Session {

@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { profiliIm } from "@/lib/lejet";
 import { getSql, raportoGabiminNeon } from "@/lib/db";
 
@@ -8,9 +6,8 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
 async function konteksti(id: string) {
-  const session = await getServerSession(authOptions);
   const profili = await profiliIm();
-  if (!session?.user?.id || !profili) return { error: "hyr" as const };
+  if (!profili) return { error: "hyr" as const };
   const sql = getSql();
   const udhetimet = await sql`SELECT id, shofer_id, vende FROM udhetimet WHERE id = ${id}`;
   if (!udhetimet[0]) return { error: "mungon" as const };
@@ -32,7 +29,7 @@ export async function GET(_request: Request, { params }: Context) {
     const eshteShofer = ctx.udhetimi.shofer_id === ctx.profili.id;
     const mundTaShohe = eshteShofer || ctx.kerkesa?.status === "pranuar";
     const kerkesatPerShoferin = eshteShofer
-      ? await ctx.sql`SELECT k.id, k.status, k.udhetar_id = ${ctx.profili.id} AS eshteKerkesaIme, p.emri FROM kerkesat_udhetimit k
+      ? await ctx.sql`SELECT k.id::text AS id, k.status, k.udhetar_id = ${ctx.profili.id} AS "eshteKerkesaIme", p.emri FROM kerkesat_udhetimit k
         JOIN profilet p ON p.github_id = k.udhetar_id
         WHERE k.udhetim_id = ${id} ORDER BY k.krijuar_me`
       : [];
@@ -98,29 +95,33 @@ export async function POST(request: Request, { params }: Context) {
     }
 
     if (body.veprim === "pergjigju") {
-      if (ctx.udhetimi.shofer_id !== ctx.profili.id || !["prano", "refuzo"].includes(String(body.vendimi))) {
+      if (ctx.udhetimi.shofer_id !== ctx.profili.id || ctx.profili.roli !== "shofer") {
         return Response.json({ error: "Vetëm shoferi i udhëtimit mund t’i përgjigjet kërkesës." }, { status: 403 });
+      }
+      const kerkesaId = typeof body.kerkesaId === "string" || Number.isSafeInteger(body.kerkesaId)
+        ? String(body.kerkesaId) : "";
+      if (!/^[1-9]\d{0,18}$/.test(kerkesaId) || BigInt(kerkesaId) > BigInt("9223372036854775807")
+        || (body.vendimi !== "prano" && body.vendimi !== "refuzo")) {
+        return Response.json({ error: "Kërkesa ose vendimi nuk është i vlefshëm." }, { status: 400 });
       }
       let rows;
       if (body.vendimi === "prano") {
         // Lock the trip first so concurrent accepts cannot consume its last seat twice.
         const [, changed] = await ctx.sql.transaction([
           ctx.sql`SELECT id FROM udhetimet WHERE id = ${id} FOR UPDATE`,
-          ctx.sql`UPDATE kerkesat_udhetimit SET status = 'pranuar', ndryshuar_me = clock_timestamp()
-            WHERE id = ${Number(body.kerkesaId)} AND udhetim_id = ${id} AND status = 'ne_pritje'
-              AND EXISTS (SELECT 1 FROM udhetimet WHERE id = ${id} AND vende > 0)
-            RETURNING id`,
-          ctx.sql`UPDATE udhetimet SET vende = vende - 1
-            WHERE id = ${id} AND EXISTS (
-              SELECT 1 FROM kerkesat_udhetimit WHERE id = ${Number(body.kerkesaId)}
-                AND udhetim_id = ${id} AND status = 'pranuar'
-                AND ndryshuar_me > transaction_timestamp()
-            )`,
+          ctx.sql`WITH pranuar AS (
+            UPDATE kerkesat_udhetimit SET status = 'pranuar', ndryshuar_me = now()
+            WHERE id = ${kerkesaId} AND udhetim_id = ${id} AND status = 'ne_pritje'
+              AND EXISTS (SELECT 1 FROM udhetimet WHERE id = ${id} AND vende > 0 AND shofer_id = ${ctx.profili.id})
+            RETURNING udhetim_id
+          )
+          UPDATE udhetimet SET vende = vende - 1
+          FROM pranuar WHERE udhetimet.id = pranuar.udhetim_id RETURNING udhetimet.id`,
         ]);
         rows = changed;
       } else {
         rows = await ctx.sql`UPDATE kerkesat_udhetimit SET status = 'refuzuar', ndryshuar_me = now()
-          WHERE id = ${Number(body.kerkesaId)} AND udhetim_id = ${id} AND status = 'ne_pritje'
+          WHERE id = ${kerkesaId} AND udhetim_id = ${id} AND status = 'ne_pritje'
           RETURNING id`;
       }
       if (!rows.length) return Response.json({ error: "Kërkesa nuk u gjet ose është trajtuar." }, { status: 409 });

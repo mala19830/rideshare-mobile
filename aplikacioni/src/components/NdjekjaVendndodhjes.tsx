@@ -17,7 +17,7 @@ type TeDhena = {
   udhetim: { vende: number };
   kaShoferTjeter: boolean;
   statusKerkese: string | null;
-  kerkesatPerShoferin: { id: number; emri: string; status: "ne_pritje" | "pranuar" | "refuzuar"; eshteKerkesaIme: boolean }[];
+  kerkesatPerShoferin: { id: string; emri: string; status: "ne_pritje" | "pranuar" | "refuzuar"; eshteKerkesaIme: boolean }[];
   pozicionet: Pozicioni[];
   eNdaj: boolean;
   mundTaNdaje: boolean;
@@ -193,7 +193,7 @@ export function NdjekjaVendndodhjes({ udhetimId }: { udhetimId: string }) {
     finally { setVeprimNePritje(false); }
   }
 
-  async function pergjigju(kerkesaId: number, vendimi: "prano" | "refuzo") {
+  async function pergjigju(kerkesaId: string, vendimi: "prano" | "refuzo") {
     if (veprimNePritje || offline) return;
     setVeprimNePritje(true);
     try {
@@ -215,7 +215,7 @@ export function NdjekjaVendndodhjes({ udhetimId }: { udhetimId: string }) {
     finally { setVeprimNePritje(false); }
   }
 
-  if (dukeNgarkuar) return <section><h2>Vendndodhja live</h2><p>Po ngarkohet…</p></section>;
+  if (dukeNgarkuar) return <section><h2>Gjendja e udhëtimit</h2><p role="status">Po ngarkohet…</p></section>;
   if (!teDhena) return <section><h2>Vendndodhja live</h2><p role="alert">{mesazhi || "Hyr me GitHub për të kërkuar ose ndarë vendndodhjen."}</p><Link className="action" href="/panel">Hyr / Paneli im</Link></section>;
 
   const shoferi = teDhena.pozicionet.find((p) => p.roli === "shofer");
@@ -225,8 +225,8 @@ export function NdjekjaVendndodhjes({ udhetimId }: { udhetimId: string }) {
       : teDhena.statusKerkese === "refuzuar" ? "U refuzua" : "Pa kërkesë";
 
   return (
-    <section aria-labelledby="ndjekja-titull" data-testid="live-location">
-      <h2 id="ndjekja-titull">Vendndodhja live e udhëtimit</h2>
+    <section className="trip-card" aria-labelledby="ndjekja-titull" data-testid="live-location">
+      <h2 id="ndjekja-titull">Gjendja e udhëtimit</h2>
       <p>Vende të lira: <strong>{teDhena.udhetim.vende}</strong></p>
       <p>Kërkesa dhe koordinatat janë private për shoferin dhe udhëtarët e pranuar. Ndarja fiket nga secili person kur të dojë.</p>
       {teDhena.viewer.roli === "shofer" && !teDhena.viewer.eshteShofer && (
@@ -235,9 +235,9 @@ export function NdjekjaVendndodhjes({ udhetimId }: { udhetimId: string }) {
           : <><p>Ky udhëtim nuk ka ende shofer të lidhur.</p><button className="action" disabled={offline || veprimNePritje} onClick={merrUdhetimin}>Lidhe këtë udhëtim me profilin tim</button></>
       )}
       {teDhena.viewer.roli === "udhetar" && teDhena.viewer.eshteShofer && <p>Ky udhëtim është i lidhur me profilin tënd si shofer.</p>}
-      {!teDhena.viewer.eshteShofer && teDhena.viewer.roli === "udhetar" && !teDhena.statusKerkese && (
+      {!teDhena.viewer.eshteShofer && teDhena.viewer.roli === "udhetar" && (!teDhena.statusKerkese || teDhena.statusKerkese === "refuzuar") && (
         <button className="action" onClick={kerkoVend} disabled={teDhena.udhetim.vende < 1 || offline || veprimNePritje}>
-          {veprimNePritje ? "Po dërgohet…" : teDhena.udhetim.vende < 1 ? "Nuk ka vende të lira" : "Kërko vend dhe qasje te vendndodhja"}
+          {veprimNePritje ? "Po dërgohet…" : "Kërko vend"}
         </button>
       )}
       {teDhena.statusKerkese && <div className="request-status-card" role="status">
@@ -253,8 +253,8 @@ export function NdjekjaVendndodhjes({ udhetimId }: { udhetimId: string }) {
           <strong>{k.emri}{k.eshteKerkesaIme ? " (kërkesa jote si udhëtar)" : ""}</strong>
           <span>{k.status === "ne_pritje" ? "Në pritje" : k.status === "pranuar" ? "U pranua" : "U refuzua"}</span>
           {k.status === "ne_pritje" && <>
-            <button type="button" disabled={offline || veprimNePritje || teDhena.udhetim.vende < 1} onClick={() => void pergjigju(k.id, "prano")}>Prano</button>{" "}
-            <button type="button" disabled={offline || veprimNePritje} onClick={() => void pergjigju(k.id, "refuzo")}>Refuzo</button>
+            <button className="action" type="button" disabled={offline || veprimNePritje || teDhena.udhetim.vende < 1} onClick={() => void pergjigju(k.id, "prano")}>Prano</button>
+            <button className="action secondary" type="button" disabled={offline || veprimNePritje} onClick={() => void pergjigju(k.id, "refuzo")}>Refuzo</button>
           </>}
         </article>)}
       </div>}

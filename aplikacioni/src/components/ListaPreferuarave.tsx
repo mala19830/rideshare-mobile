@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { KartaUdhetimi } from "@/components/KartaUdhetimi";
 import type { Udhetim } from "@/lib/udhetimet";
 
 export function ListaPreferuarave({ udhetimet }: { udhetimet: Udhetim[] }) {
@@ -29,15 +29,12 @@ export function ListaPreferuarave({ udhetimet }: { udhetimet: Udhetim[] }) {
     {mesazhi && <p role="status" aria-live="polite">{mesazhi}</p>}
     {lista.length === 0 ? <p>Nuk ke më udhëtime të ruajtura si favorite.</p> :
       <div className="trip-list">
-        {lista.map((udhetim) => <article className="trip-card" key={udhetim.id}>
-          <h2>{udhetim.nisja} – {udhetim.destinacioni}</h2>
-          <p>Ora: {udhetim.ora} · Vende të lira: {udhetim.vende}</p>
-          <Link className="action" href={`/udhetimi/${udhetim.id}`}>Shiko detajet</Link>
-          <button className="favorite-button" type="button" disabled={nePritje.has(udhetim.id)}
+        {lista.map((udhetim) => <KartaUdhetimi key={udhetim.id} udhetim={udhetim}>
+          <button className="action secondary" type="button" disabled={nePritje.has(udhetim.id)}
             onClick={() => void hiqe(udhetim.id)}>
             {nePritje.has(udhetim.id) ? "Po hiqet…" : "Hiqe nga favoritët"}
           </button>
-        </article>)}
+        </KartaUdhetimi>)}
       </div>}
   </>;
 }
