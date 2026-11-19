@@ -16,7 +16,8 @@
 ## Konfigurimi real
 
 - Neon: projekti ekzistues `rideshare-mobile`, rajoni `aws-eu-central-1`, branch-i primar `production`, databaza `neondb`.
-- Vercel: projekti `rideshare-mobile`, GitHub `AlajdinFetahi/rideshare-mobile`, production branch `main`, framework Next.js, Root Directory `aplikacioni`, function region `fra1`.
+- GitHub i projektit: `mala19830/rideshare-mobile`.
+- Vercel gjatë provave të Javës 4: projekti `rideshare-mobile`, production branch `main`, framework Next.js, Root Directory `aplikacioni`, function region `fra1`.
 - Production: https://rideshare-mobile-sage.vercel.app
 - `DATABASE_URL`: konfiguruar privatisht për Production dhe Development; jo për Preview.
 - `.env.local`, `.vercel`, `.next` dhe `node_modules`: të injoruara nga Git.
