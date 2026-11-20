@@ -20,9 +20,11 @@ async function readPublicList(request) {
     if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
       throw new Error("Lista nuk erdhi nga serveri");
     }
-    const headers = new Headers(response.headers);
-    headers.set("x-rideshare-source", "network");
-    headers.set("x-rideshare-saved-at", new Date().toISOString());
+    const headers = new Headers({
+      "content-type": "application/json; charset=utf-8",
+      "x-rideshare-source": "network",
+      "x-rideshare-saved-at": new Date().toISOString(),
+    });
     const fresh = new Response(await response.text(), { status: 200, headers });
     // Nëse hapësira lokale është plot, lista nga serveri prapë shfaqet.
     try { await cache.put(API, fresh.clone()); } catch {

@@ -1,5 +1,7 @@
 # rideshare-mobile
 
+[Hap RideShare AAB](https://rideshare-aab.vercel.app)
+
 Për ta nisur versionin që përdor Vercel, hyni në `aplikacioni` dhe ekzekutoni `npm ci`, pastaj `npm run dev`. Faqja hapet te [http://localhost:3000](http://localhost:3000).
 
 Shihni [konfigurimin e Neon dhe GitHub OAuth](aplikacioni/AUTH_SETUP.md) për hyrjen, të preferuarat dhe kërkesat për vend.

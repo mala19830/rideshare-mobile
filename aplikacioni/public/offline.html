@@ -74,7 +74,7 @@ function status(text) {
   const strong = document.createElement("strong"); strong.textContent = text;
   source.replaceChildren(strong);
 }
-// Si tekstiVendeve() te src/lib/udhetimet.ts.
+// I njëjti tekst për vendet si te KartaUdhetimi.
 function seatsText(n) {
   if (n === 0) return "Nuk ka vende të lira";
   if (n === 1) return "1 vend i lirë";
@@ -92,11 +92,28 @@ function timeNode(trip) {
   wrap.append(s, arrow, strong);
   return wrap;
 }
+async function lexoListen() {
+  if (navigator.onLine !== false) {
+    try {
+      const response = await fetch("/api/udhetimet", { cache: "no-store" });
+      if (response.ok) return response;
+    } catch {}
+  }
+
+  // Faqja e kthyer nga cache mund të hapet para se ta kontrollojë service worker.
+  const cache = await caches.open("rideshare-public-v1");
+  const saved = await cache.match("/api/udhetimet");
+  if (!saved) throw new Error("no_snapshot");
+  const headers = new Headers(saved.headers);
+  headers.set("x-rideshare-source", "cache");
+  return new Response(saved.body, { headers });
+}
+
 async function load() {
   refresh.disabled = true;
   status("Po kërkojmë listën…");
   try {
-    const response = await fetch("/api/udhetimet", { cache: "no-store" });
+    const response = await lexoListen();
     const data = await response.json();
     if (!response.ok || !Array.isArray(data.trips)) throw new Error("no_snapshot");
     const fromCache = response.headers.get("x-rideshare-source") === "cache";

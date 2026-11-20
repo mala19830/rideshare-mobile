@@ -21,20 +21,18 @@ test("Java 6: manifesti, kopja publike dhe rifreskimi offline", async ({ page, r
   // dhe ta shkruajë në cache, jo vetëm që të shfaqen kartat në HTML.
   await page.goto("/");
   await expect(page.locator(".trip-card")).toHaveCount(3);
-  await page.waitForFunction(async () => {
+  await expect.poll(() => page.evaluate(async () => {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker.controller) return false;
-    const registration = await navigator.serviceWorker.ready;
-    if (!registration.active) return false;
     const cache = await caches.open("rideshare-public-v1");
     return Boolean(await cache.match("/api/udhetimet"));
-  }, null, { timeout: 30_000 });
+  }), { timeout: 30_000 }).toBe(true);
 
   // Kontrolloni se shfletuesi vërtet e lexon kopjen e ruajtur.
   await page.goto("/offline.html");
   await expect(page.locator(".trip-card")).toHaveCount(3);
   await expect(page.locator("#source")).toContainText("Lista erdhi nga serveri");
   await expect(page.locator("#saved")).not.toHaveText("—");
-  await expect(page.getByRole("button", { name: /Kërko vend/ })).toBeDisabled();
+  await expect(page.getByRole("link", { name: "Shiko detajet" })).toHaveCount(3);
 
   await context.setOffline(true);
   try {
@@ -42,7 +40,11 @@ test("Java 6: manifesti, kopja publike dhe rifreskimi offline", async ({ page, r
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".trip-card")).toHaveCount(3);
     await expect(page.locator("#source")).toContainText("Lista e fundit e ruajtur");
-    await expect(page.getByRole("button", { name: /Kërko vend/ })).toBeDisabled();
+    const details = page.getByRole("button", { name: "Shiko detajet" });
+    await expect(details).toHaveCount(3);
+    for (const button of await details.all()) {
+      await expect(button).toBeDisabled();
+    }
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator(".trip-card")).toHaveCount(3);
   } finally {
