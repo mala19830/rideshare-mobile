@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { OraUdhetimit } from "@/components/OraUdhetimit";
-import { lexoSesionin } from "@/lib/auth";
-import { gjejUdhetimin, type Udhetim } from "@/lib/udhetimet";
+import { gjejUdhetimin } from "@/lib/udhetimet";
+import { MeetingPoint } from "@/components/MeetingPoint";
+import { KerkesaUdhetimi } from "@/components/KerkesaUdhetimi";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { lexogjendjen } from "@/lib/kerkesat";
 
 export const dynamic = "force-dynamic";
 
@@ -12,58 +15,44 @@ export default async function Detajet({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  let udhetim: Udhetim | undefined;
+  let udhetim;
+
   try {
     udhetim = await gjejUdhetimin(id);
   } catch {
     return (
       <main>
         <h1>RideShare</h1>
-        <p className="lead" role="alert">
-          Nuk u lidhëm me databazën. Provo përsëri.
-        </p>
-        <Link className="action" href="/">
-          ← Kthehu te lista
-        </Link>
+        <p role="alert">Nuk u lidhëm me databazën. Provo përsëri.</p>
+        <Link href="/">← Kthehu te lista</Link>
       </main>
     );
   }
 
-  // Mungesa e udhëtimit nuk është gabim lidhjeje, prandaj qëndron jashtë try/catch.
-  if (!udhetim) notFound();
-  const brenda = Boolean(await lexoSesionin().catch(() => null));
+  if (!udhetim) {
+    notFound();
+  }
+
+  const session = await getServerSession(authOptions);
+  let gjendja = null;
+  if (session?.user.githubId) {
+    try { gjendja = await lexogjendjen(id, session.user.githubId); } catch { /* detail page remains readable */ }
+  }
 
   return (
     <main>
-      <Link className="back" href="/">
-        ← Kthehu te lista
-      </Link>
+      <Link href="/">← Kthehu te lista</Link>
       <h1>
-        {udhetim.nisja} → {udhetim.destinacioni}
+        {udhetim.nisja} – {udhetim.destinacioni}
       </h1>
-      <dl className="details">
-        <div>
-          <dt>Shoferi</dt>
-          <dd>{udhetim.shoferi}</dd>
-        </div>
-        <div>
-          <dt>Ora</dt>
-          <dd>
-            <OraUdhetimit udhetim={udhetim} />
-          </dd>
-        </div>
-        <div>
-          <dt>Vendtakimi</dt>
-          <dd>{udhetim.vendtakimi}</dd>
-        </div>
-        <div>
-          <dt>Vende të lira</dt>
-          <dd>{udhetim.vende}</dd>
-        </div>
-      </dl>
-      {udhetim.vende > 0 || brenda ? (
+      <p>Ora: {udhetim.ora}</p>
+      <p>Vendtakimi: {udhetim.vendtakimi}</p>
+      <p>Vende të lira: {udhetim.vende}</p>
+      <MeetingPoint />
+      {gjendja && <KerkesaUdhetimi id={id} initialState={gjendja} />}
+      {udhetim.vende > 0 ? (
         <Link className="action" href={`/udhetimi/${id}/kerkesa`}>
-          {udhetim.vende > 0 ? "Kërko vend" : "Shiko kërkesën"}
+          Shiko kërkesën për vend
         </Link>
       ) : (
         <button className="action" disabled>

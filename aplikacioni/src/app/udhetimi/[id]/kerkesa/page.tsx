@@ -1,63 +1,29 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { OraUdhetimit } from "@/components/OraUdhetimit";
-import { NdjekjaVendndodhjes } from "@/components/NdjekjaVendndodhjes";
-import { profiliIm } from "@/lib/lejet";
-import { gjejUdhetimin, type Udhetim } from "@/lib/udhetimet";
+import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { lexogjendjen } from "@/lib/kerkesat";
+import { KerkesaUdhetimi } from "@/components/KerkesaUdhetimi";
 
 export const dynamic = "force-dynamic";
 
-export default async function Kerkesa({
-  params,
-}: {
+export default async function Kerkesa({ params, searchParams }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ request?: string }>;
 }) {
   const { id } = await params;
-  let udhetim: Udhetim | undefined;
-  let brenda: boolean;
-  try {
-    // Kërkesa për vend lejohet vetëm me llogari; kontrolli bëhet në server.
-    [udhetim, brenda] = await Promise.all([
-      gjejUdhetimin(id),
-      profiliIm().then(Boolean),
-    ]);
-  } catch {
-    return (
-      <main>
-        <h1>RideShare</h1>
-        <p className="lead" role="alert">
-          Nuk u lidhëm me databazën. Provo përsëri.
-        </p>
-        <Link className="action" href="/">
-          ← Kthehu te lista
-        </Link>
-      </main>
-    );
+  const { request } = await searchParams;
+  const session = await getServerSession(authOptions);
+  let state = null;
+  if (session?.user.githubId) {
+    try { state = await lexogjendjen(id, session.user.githubId); } catch { /* show a safe unavailable state */ }
   }
-
-  // Së pari: a ekziston udhëtimi dhe a ka vende? Pa këtë, përdoruesi
-  // dërgohej te hyrja për një udhëtim që nuk ekziston ose që është plot.
-  if (!udhetim) notFound();
-
-  // redirect qëndron jashtë try/catch: Next.js e përdor si kontroll rrjedhe.
-  // Pas hyrjes, paneli e kthen përdoruesin te kjo kërkesë.
-  if (!brenda && udhetim.vende > 0) redirect(`/panel?m=kerkesa&prapa=/udhetimi/${encodeURIComponent(id)}/kerkesa`);
-
-  return (
-    <main>
-      <Link className="back" href={`/udhetimi/${id}`}>
-        ← Kthehu te detajet
-      </Link>
-      <p className="trip-meta">
-        <span>
-          {udhetim.nisja} → {udhetim.destinacioni}
-        </span>
-        <span>
-          Ora <OraUdhetimit udhetim={udhetim} />
-        </span>
-      </p>
-      <h1>{brenda || udhetim.vende > 0 ? "Kërkesat për udhëtimin" : "Nuk ka vende të lira."}</h1>
-      {brenda && <NdjekjaVendndodhjes key={id} udhetimId={id} />}
-    </main>
-  );
+  if (request && (!state || !state.requests.some((item) => item.id === request))) notFound();
+  return <main>
+    <Link href={`/udhetimi/${id}`}>← Kthehu te detajet</Link>
+    <h1>Kërkesa për udhëtimin {id}</h1>
+    {!session && <p role="alert">Hyr me GitHub për të parë ose dërguar kërkesën.</p>}
+    {session && !state && <p role="alert">Gjendja nuk është e disponueshme ose nuk ke qasje.</p>}
+    {state && <KerkesaUdhetimi id={id} initialState={state} />}
+  </main>;
 }

@@ -1,19 +1,27 @@
 "use server";
-import { redirect } from "next/navigation";
+
+import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
 import { ndryshoOren } from "@/lib/lejet";
 
 export async function ruajOren(formData: FormData) {
-  let mesazh: string;
+  let result: string;
   try {
-    mesazh = await ndryshoOren(String(formData.get("id") ?? ""), String(formData.get("ora") ?? ""));
+    const session = await getServerSession(authOptions);
+    result = await ndryshoOren(
+      session?.user.githubId,
+      String(formData.get("id") ?? ""),
+      String(formData.get("ora") ?? ""),
+    );
   } catch {
-    mesazh = "databaza";
+    result = "databaza";
   }
-  if (mesazh === "ruajtur") {
+  if (result === "sukses") {
     revalidatePath("/");
-    revalidatePath("/udhetimi/2");
+    revalidatePath(`/udhetimi/${String(formData.get("id"))}`);
+    revalidatePath("/panel");
   }
-  // redirect qëndron jashtë try/catch: Next.js e përdor si kontroll rrjedhe.
-  redirect("/panel?m=" + mesazh);
+  redirect(`/panel?rezultati=${result}`);
 }

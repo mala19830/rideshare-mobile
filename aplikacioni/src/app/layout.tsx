@@ -1,54 +1,20 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import Link from "next/link";
-import { NderruesiTemes } from "@/components/NderruesiTemes";
-import Pwa from "@/components/Pwa";
-import { ShiritiLlogarise } from "@/components/ShiritiLlogarise";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { Njoftimet } from "@/components/Njoftimet";
+import { Pwa } from "@/components/Pwa";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  display: "swap",
-});
-
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "RideShare AAB",
-  description: "Udhëtime të përbashkëta për në AAB",
+  title: "RideShare",
+  description: "Udhëtime të përbashkëta për studentët",
 };
 
-// Vendos temën para se të vizatohet faqja: zgjedhja e ruajtur, përndryshe ajo e sistemit.
-const skriptiTemes = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const session = await getServerSession(authOptions);
   return (
-    <html
-      lang="sq"
-      className={`${geistSans.variable} ${geistMono.variable}`}
-      suppressHydrationWarning
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: skriptiTemes }} />
-      </head>
-      <body>
-        <header className="top-bar">
-          <Link className="brand" href="/">
-            RideShare
-          </Link>
-          <div className="top-actions">
-            <ShiritiLlogarise />
-            <NderruesiTemes />
-          </div>
-        </header>
-        <Pwa />
-        {children}
-      </body>
+    <html lang="sq" className="dark" style={{ colorScheme: "dark" }}>
+      <body><Pwa />{session?.user.githubId && <Njoftimet />}{children}</body>
     </html>
   );
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
-import { getSql } from "./db";
+import { getSql } from "./trips";
 
 type Profil = { id: string; emri: string; roli: "udhetar" | "shofer" };
 

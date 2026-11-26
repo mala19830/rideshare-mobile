@@ -2,19 +2,22 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { Udhetim } from "@/lib/udhetimet";
 
-const { gjejUdhetiminMock } = vi.hoisted(() => ({
+const { gjejUdhetiminMock, lexogjendjenMock } = vi.hoisted(() => ({
   gjejUdhetiminMock: vi.fn(),
+  lexogjendjenMock: vi.fn(),
 }));
 
 vi.mock("@/lib/udhetimet", () => ({
   gjejUdhetimin: gjejUdhetiminMock,
 }));
+vi.mock("@/lib/kerkesat", () => ({ lexogjendjen: lexogjendjenMock }));
+vi.mock("@/lib/auth", () => ({ authOptions: {} }));
+vi.mock("next-auth", () => ({ getServerSession: vi.fn().mockResolvedValue(null) }));
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
 }));
-vi.mock("@/lib/auth", () => ({ lexoSesionin: async () => null }));
 
 import Detajet from "./page";
 
@@ -39,8 +42,11 @@ describe("Detajet", () => {
       await Detajet({ params: Promise.resolve({ id: "2" }) }),
     );
 
-    expect(html).toContain("Fushë Kosovë → AAB");
-    expect(html).toContain("<dd>08:15</dd>");
+    expect(html).toContain("Fushë Kosovë – AAB");
+    expect(html).toContain("Ora: 08:15");
+    expect(html).toContain('data-testid="meeting-input"');
+    expect(html).toContain('data-testid="location-status" data-state="idle"');
+    expect(html).toContain("Ende pa zgjedhje");
   });
 
   test("paraqet gabim të sigurt kur databaza nuk arrihet", async () => {

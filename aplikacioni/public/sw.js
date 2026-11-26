@@ -1,58 +1,60 @@
-// Kjo cache përmban VETËM dokumentin offline, ikonat dhe listën publike.
 const CACHE = "rideshare-public-v1";
-const API = "/api/udhetimet";
-const SHELL = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"];
+const ASSETS = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"];
 
-self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))
-    .then(() => self.skipWaiting()));
-});
-self.addEventListener("activate", event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys
-    .filter(key => key.startsWith("rideshare-public-") && key !== CACHE)
-    .map(key => caches.delete(key)))).then(() => self.clients.claim()));
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 
-async function readPublicList(request) {
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key.startsWith("rideshare-public-") && key !== CACHE)
+      .map((key) => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+async function tripsResponse() {
   const cache = await caches.open(CACHE);
   try {
-    const response = await fetch(request);
-    if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
-      throw new Error("Lista nuk erdhi nga serveri");
-    }
-    const headers = new Headers({
+    const response = await fetch("/api/udhetimet", { cache: "no-store", credentials: "omit" });
+    if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) throw new Error("Përgjigje e pavlefshme");
+    const data = await response.json();
+    if (!Array.isArray(data.trips) || !data.trips.every((trip) => trip &&
+      ["id", "nisja", "destinacioni", "ora", "vendtakimi"].every((key) => typeof trip[key] === "string") &&
+      Number.isInteger(trip.vende) && trip.vende >= 0)) throw new Error("Listë e pavlefshme");
+    const trips = data.trips.map(({ id, nisja, destinacioni, ora, vendtakimi, vende }) =>
+      ({ id, nisja, destinacioni, ora, vendtakimi, vende }));
+    const saved = new Response(JSON.stringify({ trips }), { headers: {
       "content-type": "application/json; charset=utf-8",
-      "x-rideshare-source": "network",
+      "cache-control": "no-store",
       "x-rideshare-saved-at": new Date().toISOString(),
-    });
-    const fresh = new Response(await response.text(), { status: 200, headers });
-    // Nëse hapësira lokale është plot, lista nga serveri prapë shfaqet.
-    try { await cache.put(API, fresh.clone()); } catch {
-      // Mos pretendo ruajtje kur pajisja nuk e pranoi kopjen.
-      fresh.headers.delete("x-rideshare-saved-at");
-    }
-    return fresh;
+      "x-rideshare-source": "network",
+    } });
+    await cache.put("/api/udhetimet", saved.clone());
+    return saved;
   } catch {
-    const saved = await cache.match(API);
-    if (!saved) return new Response(JSON.stringify({ error: "no_snapshot" }), {
-      status: 503, headers: { "content-type": "application/json" },
+    const saved = await cache.match("/api/udhetimet");
+    if (!saved) return new Response(JSON.stringify({ error: "Nuk ka kopje të ruajtur." }), {
+      status: 503, headers: { "content-type": "application/json", "cache-control": "no-store" },
     });
     const headers = new Headers(saved.headers);
     headers.set("x-rideshare-source", "cache");
-    return new Response(await saved.text(), { status: 200, headers });
+    return new Response(saved.body, { headers });
   }
 }
 
-self.addEventListener("fetch", event => {
-  const request = event.request, url = new URL(request.url);
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
-  if (url.pathname === API && !url.search) {
-    event.respondWith(readPublicList(request));
-  } else if (request.mode === "navigate" && ["/", "/offline.html"].includes(url.pathname)) {
-    event.respondWith(fetch(request).catch(async () => {
-      const saved = await caches.match("/offline.html");
-      return saved || new Response("Hape RideShare një herë me internet.", { status: 503 });
-    }));
+  if (url.pathname === "/api/udhetimet" && !url.search) {
+    event.respondWith(tripsResponse());
+  } else if (request.mode === "navigate" && url.pathname === "/") {
+    event.respondWith(fetch(request).catch(async () =>
+      (await caches.open(CACHE)).match("/offline.html")));
+  } else if (ASSETS.includes(url.pathname) && !url.search) {
+    event.respondWith(caches.open(CACHE).then(async (cache) =>
+      (await cache.match(url.pathname)) || fetch(request)));
   }
-  // /panel, /api/auth, POST dhe faqet private nuk ruhen dhe nuk ridërgohen.
 });

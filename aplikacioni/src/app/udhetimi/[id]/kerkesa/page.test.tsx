@@ -1,77 +1,35 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import type { Udhetim } from "@/lib/udhetimet";
 
-const { gjejUdhetiminMock, profiliMock } = vi.hoisted(() => ({
-  gjejUdhetiminMock: vi.fn(),
-  profiliMock: vi.fn(),
+const { getServerSessionMock, lexogjendjenMock } = vi.hoisted(() => ({
+  getServerSessionMock: vi.fn(),
+  lexogjendjenMock: vi.fn(),
 }));
 
-vi.mock("@/lib/udhetimet", () => ({
-  gjejUdhetimin: gjejUdhetiminMock,
-}));
-vi.mock("next/navigation", () => ({
-  redirect: (url: string) => { throw new Error(url); },
-  notFound: () => {
-    throw new Error("NEXT_NOT_FOUND");
-  },
-}));
-vi.mock("@/lib/lejet", () => ({ profiliIm: profiliMock }));
+vi.mock("next-auth", () => ({ getServerSession: getServerSessionMock }));
+vi.mock("@/lib/auth", () => ({ authOptions: {} }));
+vi.mock("@/lib/kerkesat", () => ({ lexogjendjen: lexogjendjenMock }));
 
 import Kerkesa from "./page";
 
-const udhetimi: Udhetim = {
-  id: "2",
-  nisja: "Fushë Kosovë",
-  destinacioni: "AAB",
-  ora: "08:15",
-  vendtakimi: "Te stacioni kryesor",
-  vende: 1,
-};
-
 describe("Kerkesa", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    profiliMock.mockResolvedValue(null);
+  beforeEach(() => vi.clearAllMocks());
+
+  test("kërkon hyrje para shfaqjes së kërkesës personale", async () => {
+    getServerSessionMock.mockResolvedValue(null);
+    const html = renderToStaticMarkup(await Kerkesa({ params: Promise.resolve({ id: "2" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Hyr me GitHub");
+    expect(html).not.toContain("Kërko një vend");
   });
 
-  test("hap kërkesat reale për një përdorues të identifikuar", async () => {
-    gjejUdhetiminMock.mockResolvedValue(udhetimi);
-    profiliMock.mockResolvedValue({ id: "123" });
-
-    const html = renderToStaticMarkup(
-      await Kerkesa({ params: Promise.resolve({ id: "2" }) }),
-    );
-
-    expect(html).toContain("Kërkesat për udhëtimin");
-    expect(html).toContain("Gjendja e udhëtimit");
-    expect(html).not.toContain("Simulim");
-  });
-
-  test("kthen vizitorin te paneli me adresën e kërkesës", async () => {
-    gjejUdhetiminMock.mockResolvedValue(udhetimi);
-    await expect(Kerkesa({ params: Promise.resolve({ id: "2" }) }))
-      .rejects.toThrow("/panel?m=kerkesa&prapa=/udhetimi/2/kerkesa");
-  });
-
-  test("paraqet mungesën e vendeve pa simuluar kërkesë", async () => {
-    gjejUdhetiminMock.mockResolvedValue({ ...udhetimi, vende: 0 });
-
-    const html = renderToStaticMarkup(
-      await Kerkesa({ params: Promise.resolve({ id: "2" }) }),
-    );
-
-    expect(html).toContain("Nuk ka vende të lira.");
-    expect(html).not.toContain("Simulim: Në pritje");
-  });
-
-  test("paraqet gabim të sigurt kur databaza nuk arrihet", async () => {
-    gjejUdhetiminMock.mockRejectedValue(new Error("connection failed"));
-
-    const html = renderToStaticMarkup(
-      await Kerkesa({ params: Promise.resolve({ id: "2" }) }),
-    );
-
-    expect(html).toContain("Nuk u lidhëm me databazën. Provo përsëri.");
+  test("paraqet gjendjen reale të lexuar përmes serverit", async () => {
+    getServerSessionMock.mockResolvedValue({ user: { githubId: "123" } });
+    lexogjendjenMock.mockResolvedValue({
+      ride: { id: "2", nisja: "Ferizaj", vende: 2 }, role: "passenger", requests: [],
+    });
+    const html = renderToStaticMarkup(await Kerkesa({ params: Promise.resolve({ id: "2" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Udhëtimi 2");
+    expect(html).toContain("Vende të lira: <strong>2</strong>");
+    expect(html).toContain("Pa kërkesë");
   });
 });

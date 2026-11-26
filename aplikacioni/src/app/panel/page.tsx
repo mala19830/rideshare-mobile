@@ -1,78 +1,55 @@
 import Link from "next/link";
-import Hyrja from "@/components/Hyrja";
-import { hyrjaAktive } from "@/lib/auth";
-import { profiliIm } from "@/lib/lejet";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getSql } from "@/lib/db";
+import { Hyrja } from "@/components/Hyrja";
 import { ruajOren } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const mesazhet: Record<string, string> = {
-  hyr: "Hyr në llogari para se të ndryshosh udhëtimin.",
-  kerkesa: "Për të kërkuar vend në udhëtim duhet të hysh me llogarinë tënde GitHub.",
-  ndaluar: "Nuk ke leje për këtë udhëtim. Ora nuk ndryshoi.",
-  fushe: "Shkruaj një orë të vlefshme, p.sh. 08:25. ID duhet të jetë 1, 2 ose 3.",
-  ruajtur: "Ora u ruajt me sukses. Kontrollo listën dhe detajet.",
-  databaza: "Nuk u lidhëm me databazën. Kontrollo Neon dhe provo përsëri.",
+  sukses: "Ora u ndryshua me sukses.",
+  refuzim: "Refuzuar: vetëm shoferi pronar mund ta ndryshojë këtë udhëtim.",
+  sesion: "Mungon sesioni. Hyr me GitHub.",
+  ora: "Ora duhet të jetë në formatin HH:mm (00:00–23:59).",
+  databaza: "Gabim databaze. Provo përsëri.",
 };
 
-// Pranojmë vetëm adresën e një kërkese brenda aplikacionit, jo linqe të jashtme.
-function adresaPrapa(prapa: string | string[] | undefined) {
-  return typeof prapa === "string" && /^\/udhetimi\/\d+\/kerkesa$/.test(prapa)
-    ? prapa
-    : "/panel";
-}
-
-export default async function Panel({ searchParams }: PageProps<"/panel">) {
-  const { m, prapa } = await searchParams;
-  const mesazh = typeof m === "string" && Object.hasOwn(mesazhet, m) ? mesazhet[m] : undefined;
-
-  let p;
-  try {
-    p = await profiliIm();
-  } catch {
-    return (
-      <main>
-        <h1>Paneli im</h1>
-        <p className="lead" role="alert">{mesazhet.databaza}</p>
-        <Link className="action" href="/panel">Provo përsëri</Link>
-      </main>
-    );
+export default async function Panel({ searchParams }: {
+  searchParams: Promise<{ rezultati?: string }>;
+}) {
+  const { rezultati } = await searchParams;
+  const session = await getServerSession(authOptions);
+  let profil;
+  let gabim = false;
+  if (session?.user.githubId) {
+    try {
+      const sql = getSql();
+      [profil] = await sql`SELECT emri, roli FROM profilet WHERE github_id = ${session.user.githubId}`;
+    } catch {
+      gabim = true;
+    }
   }
-
   return (
     <main>
-      <Link className="back" href="/">← Kthehu te udhëtimet</Link>
+      <Link href="/">← Kthehu te lista</Link>
       <h1>Paneli im</h1>
-      {mesazh && <p className="note" role="status">{mesazh}</p>}
-      {!p ? (
-        <p className="lead">Lista është publike. Për panelin hyr me llogarinë tënde GitHub.</p>
-      ) : (
-        <>
-          <p className="lead">
-            Përshëndetje, {p.emri}. Roli: <strong>{p.roli}</strong>.
-          </p>
-          <p>ID ime GitHub: <code>{p.id}</code></p>
-        </>
-      )}
-      {hyrjaAktive ? (
-        <Hyrja brenda={Boolean(p)} prapa={adresaPrapa(prapa)} />
-      ) : (
-        <p className="note" role="status">Hyrja me GitHub është përkohësisht e padisponueshme.</p>
-      )}
-      {p?.roli === "shofer" ? (
-        <form action={ruajOren} className="trip-card">
-          <h2>Ndrysho orën e udhëtimit tim</h2>
+      <Hyrja authenticated={!!session} />
+      {rezultati && mesazhet[rezultati] && <p role="status">{mesazhet[rezultati]}</p>}
+      {gabim && <p role="alert">{mesazhet.databaza}</p>}
+      {!session && <p>Mungon sesioni. Hyr me GitHub.</p>}
+      {session && profil && <>
+        <p>Emri: {profil.emri}</p>
+        <p>Roli: {profil.roli}</p>
+        <p>GitHub ID: {session.user.githubId}</p>
+        {profil.roli === "shofer" && <form action={ruajOren}>
+          <h2>Ndrysho orën e udhëtimit 2</h2>
           <input type="hidden" name="id" value="2" />
-          <label htmlFor="ora">Ora e re</label>{" "}
-          <input id="ora" name="ora" type="time" defaultValue="08:15" required />{" "}
+          <label htmlFor="ora">Ora (HH:mm): </label>
+          <input id="ora" name="ora" type="text" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="08:15" required />
           <button className="action" type="submit">Ruaj orën</button>
-          <p className="trip-meta">
-            Formulari i laboratorit provon ID 2. Serveri verifikon pronarin edhe nëse ID ndryshohet.
-          </p>
-        </form>
-      ) : (
-        p && <p>Si udhëtar mund të shohësh udhëtimet; nuk mund të ndryshosh orën e shoferit.</p>
-      )}
+        </form>}
+      </>}
     </main>
   );
 }

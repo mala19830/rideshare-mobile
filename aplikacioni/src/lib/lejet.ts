@@ -1,35 +1,16 @@
 import "server-only";
-import { cache } from "react";
-import { lexoSesionin } from "./auth";
 import { getSql } from "./db";
 
-type Profil = { id: string; emri: string; roli: "udhetar" | "shofer" };
-
-export const profiliIm = cache(async (): Promise<Profil | null> => {
-  const session = await lexoSesionin();
-  const id = session?.user?.id;
-  if (!id || !/^\d+$/.test(id)) return null;
+export async function ndryshoOren(githubId: string | undefined, id: string, ora: string) {
+  if (!githubId) return "sesion";
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(ora)) return "ora";
   const sql = getSql();
-  // Çdo hyrje e re fillon si udhëtar. Formulari nuk mund të zgjedhë rol.
-  await sql`INSERT INTO profilet (github_id, emri) VALUES (${id}, ${session.user.name ?? "Student"})
-    ON CONFLICT (github_id) DO NOTHING`;
-  const rows = await sql`SELECT github_id AS id, emri, roli FROM profilet WHERE github_id = ${id}`;
-  return rows[0] as Profil;
-});
-
-export async function ndryshoOren(id: string, ora: string) {
-  const p = await profiliIm();
-  if (!p) return "hyr";
-  if (p.roli !== "shofer") return "ndaluar";
-  if (!/^[123]$/.test(id) || !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(ora)) return "fushe";
-  const sql = getSql();
-  // Pronari vjen nga sesioni; jo nga një fushë e formularit.
-  // Ora e vjetër ruhet si e mëparshme vetëm kur ora vërtet ndryshon.
-  const rows = await sql`UPDATE udhetimet
-    SET ora_e_meparshme = CASE WHEN ora <> ${ora} THEN ora ELSE ora_e_meparshme END,
-      ora = ${ora}
-    WHERE id = ${id} AND shofer_id = ${p.id}
-      AND EXISTS (SELECT 1 FROM profilet WHERE github_id = ${p.id} AND roli = 'shofer')
-    RETURNING id`;
-  return rows.length === 1 ? "ruajtur" : "ndaluar";
+  const rows = await sql`
+    UPDATE udhetimet AS u SET ora = ${ora}
+    FROM profilet AS p
+    WHERE u.id = ${id} AND u.shofer_id = ${githubId}
+      AND p.github_id = u.shofer_id AND p.roli = 'shofer'
+    RETURNING u.id
+  `;
+  return rows.length ? "sukses" : "refuzim";
 }

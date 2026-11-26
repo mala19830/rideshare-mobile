@@ -1,50 +1,33 @@
+import Link from "next/link";
 import { KartaUdhetimi } from "@/components/KartaUdhetimi";
-import { ListaUdhetimeve } from "@/components/ListaUdhetimeve";
-import { profiliIm } from "@/lib/lejet";
-import { lexoIdPreferimesh } from "@/lib/preferimet";
 import { lexoUdhetimet, type Udhetim } from "@/lib/udhetimet";
 
-// Lexo bazën përsëri në çdo kërkesë për këtë faqe.
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   let udhetimet: Udhetim[];
+
   try {
     udhetimet = await lexoUdhetimet();
   } catch {
     return (
       <main>
-        <h1>Udhëtimet për AAB</h1>
-        <p className="lead" role="alert">
-          Nuk u lidhëm me databazën. Provo përsëri.
-        </p>
-        {/* Rifreskim i plotë, që faqja ta pyesë databazën përsëri. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="action" href="/">
+        <h1>RideShare</h1>
+        <p role="alert">Nuk u lidhëm me databazën. Provo përsëri.</p>
+        <Link className="action" href="/">
           Provo përsëri
-        </a>
+        </Link>
       </main>
     );
   }
 
-  let preferuarat: string[] | undefined;
-  let gabimPreferimesh = false;
-  try {
-    const profili = await profiliIm();
-    if (profili) preferuarat = await lexoIdPreferimesh(profili.id);
-  } catch {
-    gabimPreferimesh = true;
-  }
-
   return (
     <main>
-      <h1>Udhëtimet për AAB</h1>
-      <p className="lead">Zgjidh një nisje dhe lexo detajet para kërkesës.</p>
-      {gabimPreferimesh && <p className="note" role="status">Udhëtimet e preferuara s’u ngarkuan. Provo përsëri më vonë.</p>}
+      <h1>RideShare · Udhëtimet për AAB</h1>
+      <Link href="/panel">Hyr / Paneli im</Link>
+      <p>Burimi: Neon · të dhëna fiktive për ushtrime</p>
       {udhetimet.length === 0 ? (
-        <p className="lead">Nuk ka udhëtime për momentin.</p>
-      ) : preferuarat ? (
-        <ListaUdhetimeve udhetimet={udhetimet} preferuarat={preferuarat} />
+        <p>Nuk ka udhëtime për momentin.</p>
       ) : (
         <div className="trip-list">
           {udhetimet.map((udhetim) => (

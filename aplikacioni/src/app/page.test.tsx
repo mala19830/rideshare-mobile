@@ -9,8 +9,6 @@ const { lexoUdhetimetMock } = vi.hoisted(() => ({
 vi.mock("@/lib/udhetimet", () => ({
   lexoUdhetimet: lexoUdhetimetMock,
 }));
-vi.mock("@/lib/lejet", () => ({ profiliIm: async () => null }));
-vi.mock("@/lib/preferimet", () => ({ lexoIdPreferimesh: vi.fn() }));
 
 import Home from "./page";
 
@@ -33,8 +31,8 @@ describe("Home", () => {
 
     const html = renderToStaticMarkup(await Home());
 
-    expect(html).toContain("Prishtinë → AAB");
-    expect(html).toContain("Shiko detajet");
+    expect(html).toContain("Prishtinë – AAB");
+    expect(html).toContain("Burimi: Neon");
   });
 
   test("paraqet mesazhin e listës bosh", async () => {

@@ -1,28 +1,34 @@
 "use client";
-import { useEffect } from "react";
 
-export default function Pwa() {
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+
+export function Pwa() {
+  const pathname = usePathname();
   useEffect(() => {
+    if (pathname === "/java-08-test") return;
     if (!("serviceWorker" in navigator)) return;
-    let cancelled = false;
-    // Server rendering nuk mbush cache-n e JSON-it. E kërkojmë një herë këtu.
-    async function warmSnapshot() {
-      if (cancelled || !navigator.serviceWorker.controller) return;
-      try { await fetch("/api/udhetimet", { cache: "no-store" }); } catch { /* offline */ }
-    }
-    navigator.serviceWorker.addEventListener("controllerchange", warmSnapshot);
-    navigator.serviceWorker.register("/sw.js", { scope: "/" })
-      .then(() => navigator.serviceWorker.ready).then(warmSnapshot).catch(() => {});
-    return () => {
-      cancelled = true;
-      navigator.serviceWorker.removeEventListener("controllerchange", warmSnapshot);
+    let filled = false;
+    let disposed = false;
+    const fill = () => {
+      if (!disposed && !filled && navigator.serviceWorker.controller) {
+        filled = true;
+        void fetch("/api/udhetimet", { cache: "no-store", credentials: "omit" }).catch(() => {});
+      }
     };
-  }, []);
-  // Stilet te globals.css (.pwa-note), si pjesa tjetër e aplikacionit.
-  return <aside className="pwa-note">
-    <div>
-      <a href="/offline.html">Lista për lexim pa internet →</a>
-      <p>Kopja e ruajtur mund të jetë e vjetër. Këtu nuk konfirmohen rezervime.</p>
-    </div>
-  </aside>;
+    navigator.serviceWorker.addEventListener("controllerchange", fill);
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" })
+      .then(() => navigator.serviceWorker.ready).then(fill).catch(() => {});
+    return () => {
+      disposed = true;
+      navigator.serviceWorker.removeEventListener("controllerchange", fill);
+    };
+  }, [pathname]);
+
+  return (
+    <aside style={{ maxWidth: 720, margin: "auto", padding: "12px 24px" }}>
+      <a href="/offline.html">Lista për lexim pa internet</a>
+      <small style={{ display: "block" }}>Kopja mund të jetë e vjetër; nuk konfirmohen rezervime.</small>
+    </aside>
+  );
 }
