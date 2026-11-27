@@ -1,0 +1,5 @@
+.env*
+.next/
+.npm-cache/
+node_modules/
+*.tsbuildinfo
